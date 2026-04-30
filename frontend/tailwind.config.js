@@ -17,7 +17,7 @@ export default {
         body: ["Inter", "sans-serif"],
       },
       borderRadius: {
-        'lvl2': '0.5rem', // 명세서의 Level 2 둥글기 (8px)
+        'lvl2': '12px', // 명세서의 Level 2 둥글기 (12px)
       }
     },
   },
