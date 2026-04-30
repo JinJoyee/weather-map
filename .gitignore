@@ -10,9 +10,9 @@ frontend/.env.local
 frontend/.eslintcache
 
 # --- 백엔드 (backend/ 관련) ---
-backend/__pycache__/
-backend/*.py[cod]
-backend/*$py.class
+backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/**/*$py.class
 backend/.venv/
 backend/venv/
 backend/env/
