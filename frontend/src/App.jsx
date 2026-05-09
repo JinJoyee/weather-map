@@ -1,8 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SecondPage from './SecondPage';
+import { fetchCurrentWeather } from './api/weather';
 
 function App() {
   const [page, setPage] = useState(0);
+  const [backendStatus, setBackendStatus] = useState('checking');
+  const [backendError, setBackendError] = useState(null);
+
+  useEffect(() => {
+    fetchCurrentWeather(36.6284, 127.4565)
+      .then(() => setBackendStatus('ok'))
+      .catch((err) => {
+        setBackendStatus('fail');
+        setBackendError(err.message || '알 수 없는 에러');
+      });
+  }, []);
 
   if (page === 0) {
     return (
@@ -26,12 +38,26 @@ function App() {
             날씨 데이터를 기반으로 최적의 이동 경로를 추천합니다.
           </p>
 
-          <button 
+          <button
             onClick={() => setPage(1)}
             className="w-full bg-primary text-white py-3 rounded-lvl2 font-bold hover:scale-[1.03] transition-all"
           >
             탐색 시작하기
           </button>
+        </div>
+
+        <div className="mt-8 h-5 flex items-center">
+          {backendStatus === 'checking' && (
+            <p className="text-xs text-gray-500">백엔드 연결 확인 중...</p>
+          )}
+          {backendStatus === 'ok' && (
+            <p className="text-xs text-green-600 font-bold">백엔드 연결됨</p>
+          )}
+          {backendStatus === 'fail' && (
+            <p className="text-xs text-red-600 font-bold" title={backendError ?? ''}>
+              백엔드 연결 실패
+            </p>
+          )}
         </div>
       </div>
     );
