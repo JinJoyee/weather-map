@@ -2,13 +2,14 @@ from fastapi import APIRouter
 from datetime import datetime
 from app.services.weather_service import get_weather
 from app.services.context_engine import get_context_tags
+from app.services.route_engine import build_routes
 
 router = APIRouter(prefix="/api/route", tags=["route"])
 
 @router.get("/recommend")
-async def recommend_route(lat: float, lng: float):
+async def recommend_route(start_lat: float, start_lng: float, end_lat: float, end_lng: float):
     # 1. 날씨 데이터 가져오기
-    weather_data = await get_weather(lat, lng)
+    weather_data = await get_weather(start_lat, start_lng)
     uv_index = weather_data.get("uv_index", 3)
 
     # 2. 현재 시각 + 일출/일몰 (고정값)
@@ -19,7 +20,10 @@ async def recommend_route(lat: float, lng: float):
     # 3. 상황 태그 판단
     context_tags = get_context_tags(weather_data, uv_index, current_time, sunset, sunrise)
 
-    # 4. 태그 기반 추천 결정
+    # 4. 상황별 경로 생성
+    routes = build_routes(context_tags)
+
+    # 5. 추천 문자열 결정
     if "비" in context_tags or "자외선_매우높음" in context_tags:
         recommendation = "실내 경로 추천 — 비 또는 자외선이 강해 실내 이동을 권장합니다."
     elif "눈" in context_tags:
@@ -32,9 +36,10 @@ async def recommend_route(lat: float, lng: float):
         recommendation = "일반 경로 추천 — 날씨가 좋습니다!"
 
     return {
-        "lat": lat,
-        "lng": lng,
+        "start": {"lat": start_lat, "lng": start_lng},
+        "end": {"lat": end_lat, "lng": end_lng},
         "context_tags": context_tags,
         "weather": weather_data,
-        "recommendation": recommendation
+        "recommendation": recommendation,
+        "routes": routes
     }
