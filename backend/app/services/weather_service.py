@@ -68,9 +68,21 @@ async def get_weather(lat: float, lng: float):
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, params=params, timeout=10)
-        data = response.json()
-
-    items = data["response"]["body"]["items"]["item"]
+        
+        try:
+            data = response.json()
+            items = data["response"]["body"]["items"]["item"]
+        except Exception:
+            return {
+                "lat": lat,
+                "lng": lng,
+                "nx": nx,
+                "ny": ny,
+                "rain_probability": 0,
+                "snow_probability": 0,
+                "uv_index": 3,
+                "weather": "맑음 (목업)"
+            }
 
     result = {
         "lat": lat,
