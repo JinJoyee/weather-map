@@ -68,9 +68,21 @@ async def get_weather(lat: float, lng: float):
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, params=params, timeout=10)
-        data = response.json()
-
-    items = data["response"]["body"]["items"]["item"]
+        
+        try:
+            data = response.json()
+            items = data["response"]["body"]["items"]["item"]
+        except Exception:
+            return {
+                "lat": lat,
+                "lng": lng,
+                "nx": nx,
+                "ny": ny,
+                "rain_probability": 0,
+                "snow_probability": 0,
+                "uv_index": 3,
+                "weather": "맑음 (목업)"
+            }
 
     result = {
         "lat": lat,
@@ -97,3 +109,31 @@ async def get_weather(lat: float, lng: float):
             result["weather"] = sky_map.get(value, "맑음")
 
     return result
+
+async def get_uv_index(lat: float, lng: float):
+    from datetime import datetime
+    from app.config import UV_API_KEY
+
+    now = datetime.now()
+    time = now.strftime("%y%m%d") + f"{(now.hour // 3) * 3:02d}"
+    area_no = "4311100000"  # 청주시
+
+    url = "http://apis.data.go.kr/1360000/LivingWthrIdxServiceV4/getUVIdxV4"
+    params = {
+        "ServiceKey": UV_API_KEY,
+        "pageNo": 1,
+        "numOfRows": 10,
+        "dataType": "JSON",
+        "areaNo": area_no,
+        "time": time,
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params, timeout=10)
+            data = response.json()
+            items = data["response"]["body"]["items"]["item"]
+            uv_value = int(items[0]["h0"])
+            return uv_value
+    except Exception:
+        return 3  # fallback 기본값

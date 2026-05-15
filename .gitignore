@@ -32,3 +32,6 @@ backend/*.sqlite3
 .idea/
 *.swp
 *.swo
+
+**/__pycache__/
+**/*.pyc
