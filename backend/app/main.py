@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import weather
+from app.routers import weather, auth
 
 app = FastAPI()
 
