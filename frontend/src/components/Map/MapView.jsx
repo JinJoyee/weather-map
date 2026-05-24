@@ -1,4 +1,8 @@
-function SecondPage({ onBack }) {
+import { useNavigate } from 'react-router-dom';
+
+export default function MapView() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-neutral flex flex-col items-center justify-center p-6">
       <div className="glass-panel p-8 max-w-md w-full text-center">
@@ -8,7 +12,7 @@ function SecondPage({ onBack }) {
         </p>
         
         <button 
-          onClick={onBack}
+          onClick={() => navigate(-1)}
           className="w-full py-3 px-6 rounded-lvl2 border border-primary text-primary font-bold hover:bg-primary/5 transition-all"
         >
           이전으로 돌아가기
@@ -17,5 +21,3 @@ function SecondPage({ onBack }) {
     </div>
   );
 }
-
-export default SecondPage;
