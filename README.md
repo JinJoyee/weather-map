@@ -11,15 +11,24 @@
 ```bash
 cd backend
 
+# 가상환경 생성
+python -m venv venv
+
 # 가상환경 활성화
 source venv/bin/activate      # Linux / Mac
-venv\Scripts\activate         # Windows
+
+# Windows CMD
+venv\Scripts\activate
+# Windows PowerShell (처음 실행 시 아래 명령어 먼저 실행 필요)
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\venv\Scripts\Activate.ps1
 
 # 패키지 설치
 pip install -r requirements.txt
 
 # 환경변수 설정
-cp .env.example .env
+cp .env.example .env        # Linux / Mac
+copy .env.example .env      # Windows
 # .env 파일을 열어 API 키 입력
 
 # 서버 실행
