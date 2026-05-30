@@ -1,10 +1,18 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import { fetchCurrentWeather } from '../../api/weather';
 
 const DAEJEON_LAT = 36.3504;
 const DAEJEON_LNG = 127.3845;
 
 export default function MapView() {
   const mapRef = useRef(null);
+  const [weather, setWeather] = useState(null);
+
+  useEffect(() => {
+    fetchCurrentWeather(DAEJEON_LAT, DAEJEON_LNG)
+      .then(setWeather)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const { kakao } = window;
