@@ -4,6 +4,7 @@ import { fetchCurrentWeather } from './api/weather';
 import MapView from './components/Map/MapView';
 import RouteCompare from './components/Route/RouteCompare';
 import RouteList from './components/Route/RouteList';
+import NavBar from './components/common/NavBar';
 
 function App() {
   const [backendStatus, setBackendStatus] = useState('checking');
@@ -20,7 +21,9 @@ function App() {
   }, []);
 
   return (
-    <Routes>
+    <>
+      <NavBar />
+      <Routes>
       <Route
         path="/"
         element={
@@ -92,7 +95,8 @@ function App() {
           </div>
         }
       />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
