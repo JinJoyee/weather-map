@@ -90,6 +90,30 @@ cp .env.example .env
 npm run dev
 ```
 
+### Unit Test 실행
+
+```bash
+cd backend
+
+# 가상환경 활성화
+source venv/bin/activate      # Linux / Mac
+venv\Scripts\activate         # Windows
+
+# 테스트 의존성 설치 (최초 1회)
+pip install pytest httpx
+
+# 테스트 실행
+python -m pytest tests/ -v
+```
+
+예상 출력:
+```
+tests/test_main.py::test_root PASSED
+tests/test_main.py::test_weather_endpoint_requires_params PASSED
+tests/test_main.py::test_route_endpoint_requires_params PASSED
+3 passed
+```
+
 ---
 
 ## API 키 발급
