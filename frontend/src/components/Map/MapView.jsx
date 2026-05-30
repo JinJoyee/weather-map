@@ -15,6 +15,14 @@ export default function MapView() {
 
     const marker = new kakao.maps.Marker({ position: center });
     marker.setMap(map);
+
+    const infoWindow = new kakao.maps.InfoWindow({
+      content: '<div style="padding:6px 10px;font-size:13px;">대전 중심부</div>',
+    });
+
+    kakao.maps.event.addListener(marker, 'click', () => {
+      infoWindow.open(map, marker);
+    });
   }, []);
 
   return (
