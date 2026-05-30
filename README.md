@@ -4,6 +4,42 @@
 
 ---
 
+## 의존성 (Dependencies)
+
+### 개발 환경
+| 항목 | 버전 |
+|---|---|
+| OS | Windows 10/11, macOS 12+, Ubuntu 20.04+ |
+| Python | 3.12+ |
+| Node.js | 22+ |
+| npm | 10+ |
+
+### 백엔드 주요 라이브러리
+| 라이브러리 | 버전 | 용도 |
+|---|---|---|
+| [fastapi](https://github.com/fastapi/fastapi) | 0.135.3 | 웹 프레임워크 |
+| [uvicorn](https://github.com/encode/uvicorn) | 0.44.0 | ASGI 서버 |
+| [httpx](https://github.com/encode/httpx) | 0.28.1 | 기상청 API HTTP 클라이언트 |
+| [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) | 2.0.49 | ORM |
+| [pydantic](https://github.com/pydantic/pydantic) | 2.12.5 | 데이터 검증 |
+| [python-jose](https://github.com/mpdavis/python-jose) | 3.5.0 | JWT 토큰 처리 |
+| [python-dotenv](https://github.com/theskumar/python-dotenv) | 1.2.2 | 환경변수 관리 |
+
+전체 의존성: `backend/requirements.txt` 참조
+
+### 프론트엔드 주요 라이브러리
+| 라이브러리 | 버전 | 용도 |
+|---|---|---|
+| [React](https://github.com/facebook/react) | 19.2.4 | UI 프레임워크 |
+| [react-router-dom](https://github.com/remix-run/react-router) | 7.15.1 | 클라이언트 사이드 라우팅 |
+| [axios](https://github.com/axios/axios) | 1.15.2 | HTTP 통신 |
+| [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) | 3.4.19 | 스타일링 |
+| [Vite](https://github.com/vitejs/vite) | 8.0.4 | 빌드 도구 |
+
+전체 의존성: `frontend/package.json` 참조
+
+---
+
 ## 실행 방법
 
 ### 백엔드
