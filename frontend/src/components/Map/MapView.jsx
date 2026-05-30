@@ -10,11 +10,11 @@ export default function MapView() {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
 
-    const options = {
-      center: new kakao.maps.LatLng(DAEJEON_LAT, DAEJEON_LNG),
-      level: 5,
-    };
-    new kakao.maps.Map(mapRef.current, options);
+    const center = new kakao.maps.LatLng(DAEJEON_LAT, DAEJEON_LNG);
+    const map = new kakao.maps.Map(mapRef.current, { center, level: 5 });
+
+    const marker = new kakao.maps.Marker({ position: center });
+    marker.setMap(map);
   }, []);
 
   return (
