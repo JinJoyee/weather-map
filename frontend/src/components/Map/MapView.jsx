@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { fetchCurrentWeather } from '../../api/weather';
+import WeatherIcon from '../common/WeatherIcon';
 
 const DAEJEON_LAT = 36.3504;
 const DAEJEON_LNG = 127.3845;
@@ -34,8 +35,23 @@ export default function MapView() {
   }, []);
 
   return (
-    <div className="w-full h-screen">
+    <div className="relative w-full h-screen">
       <div ref={mapRef} className="w-full h-full" />
+
+      {weather && (
+        <div className="absolute top-4 left-4 glass-panel px-4 py-3 flex items-center gap-3 z-10">
+          <WeatherIcon
+            weather={weather.weather}
+            rainProbability={weather.rain_probability}
+            snowProbability={weather.snow_probability}
+            size="text-2xl"
+          />
+          <div className="text-sm">
+            <p className="font-bold text-secondary">{weather.weather}</p>
+            <p className="text-gray-500">UV {weather.uv_index} · 강수 {weather.rain_probability}%</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
