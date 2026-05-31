@@ -1,5 +1,5 @@
 import axios from 'axios';
-import logger from '../utils/logger';
+import { setupErrorInterceptor } from '../utils/apiErrorHandler';
 
 const BASE_URL = 'http://localhost:8000';
 
@@ -11,16 +11,4 @@ export const api = axios.create({
   },
 });
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.code === 'ECONNABORTED') {
-      logger.error('[API] 타임아웃: 백엔드 서버가 느리거나 꺼져있습니다.');
-    } else if (error.response) {
-      logger.error(`[API] 에러 ${error.response.status}:`, error.response.data);
-    } else {
-      logger.error('[API] 네트워크 에러:', error.message);
-    }
-    return Promise.reject(error);
-  }
-);
+setupErrorInterceptor(api);
