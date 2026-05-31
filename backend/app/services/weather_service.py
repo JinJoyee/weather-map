@@ -66,7 +66,7 @@ async def get_weather(lat: float, lng: float):
         "ny": ny,
     }
 
-uv_value = await get_uv_index(lat, lng)
+    uv_value = await get_uv_index(lat, lng)
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, params=params, timeout=10)

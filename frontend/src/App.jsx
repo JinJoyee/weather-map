@@ -4,6 +4,7 @@ import { fetchCurrentWeather } from './api/weather';
 import MapView from './components/Map/MapView';
 import RouteCompare from './components/Route/RouteCompare';
 import RouteList from './components/Route/RouteList';
+import NavBar from './components/common/NavBar';
 
 function App() {
   const [backendStatus, setBackendStatus] = useState('checking');
@@ -20,7 +21,9 @@ function App() {
   }, []);
 
   return (
-    <Routes>
+    <>
+      <NavBar />
+      <Routes>
       <Route
         path="/"
         element={
@@ -72,7 +75,28 @@ function App() {
       <Route path="/map" element={<MapView />} />
       <Route path="/routes" element={<RouteCompare />} />
       <Route path="/custom" element={<RouteList />} />
-    </Routes>
+      <Route
+        path="*"
+        element={
+          <div className="min-h-screen bg-neutral flex flex-col items-center justify-center px-6">
+            <div className="glass-panel p-8 max-w-md w-full text-center">
+              <span className="material-symbols-outlined text-primary text-6xl mb-4 block">
+                travel_explore
+              </span>
+              <h2 className="text-3xl font-bold text-secondary mb-3">404</h2>
+              <p className="text-gray-500 mb-8">페이지를 찾을 수 없습니다.</p>
+              <button
+                onClick={() => navigate('/')}
+                className="w-full bg-primary text-white py-3 rounded-lvl2 font-bold hover:scale-[1.03] transition-all"
+              >
+                홈으로 돌아가기
+              </button>
+            </div>
+          </div>
+        }
+      />
+      </Routes>
+    </>
   );
 }
 
