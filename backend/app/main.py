@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import weather, route, auth
+from app.routers import weather, route, auth, custom_route
 from app.database import init_db
 
 app = FastAPI()
@@ -20,6 +20,7 @@ def on_startup():
 app.include_router(weather.router)
 app.include_router(route.router)
 app.include_router(auth.router)
+app.include_router(custom_route.router)
 
 @app.get("/")
 def root():
