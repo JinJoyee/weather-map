@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from datetime import datetime
-from app.services.weather_service import get_weather, get_uv_index
+from app.services.weather_service import get_weather, get_uv_index, calculate_sunrise_sunset
 from app.services.context_engine import get_context_tags
 from app.services.route_engine import build_routes
 
@@ -17,8 +17,9 @@ async def recommend_route(start_lat: float, start_lng: float, end_lat: float, en
 
     # 3. 현재 시각 + 일출/일몰 (고정값)
     current_time = datetime.now().hour
-    sunrise = 6
-    sunset = 19
+    
+    # 일출/일몰 계산
+    sunrise, sunset = calculate_sunrise_sunset(start_lat, start_lng)
 
     # 4. 상황 태그 판단
     context_tags = get_context_tags(weather_data, uv_index, current_time, sunset, sunrise)
