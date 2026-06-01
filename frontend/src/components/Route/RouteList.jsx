@@ -1,5 +1,24 @@
 export default function RouteList() {
-  const routes = [];
+  const routes = [
+    {
+      id: 1,
+      name: "등교 경로",
+      createdAt: "2026-06-01",
+      waypoints: 3,
+    },
+    {
+      id: 2,
+      name: "하교 경로",
+      createdAt: "2026-05-30",
+      waypoints: 5,
+    },
+    {
+      id: 3,
+      name: "운동 경로",
+      createdAt: "2026-05-28",
+      waypoints: 2,
+    },
+  ];
 
   return (
     <div className="flex h-screen flex-col p-6">
@@ -12,22 +31,30 @@ export default function RouteList() {
 
       {/* 경로 목록 영역 */}
       <main className="flex-1 overflow-y-auto rounded-lg border p-4">
-        {routes.length === 0 ? (
-          <p className="text-gray-500">
-            경로 목록이 여기에 표시됩니다.
-          </p>
-        ) : (
-          <div className="route-container">
-            {routes.map((route) => (
-              <div key={route.id} className="route-card">
-                <h3>{route.name}</h3>
-                <p>저장일: {route.createdAt}</p>
-                <p>웨이포인트: {route.waypoints}개</p>
-                <button>삭제</button>
+        <div className="space-y-3">
+          {routes.map((route) => (
+            <div
+              key={route.id}
+              className="flex items-center justify-between rounded-lg border p-4 shadow-sm"
+            >
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {route.name}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  저장일: {route.createdAt}
+                </p>
+                <p className="text-sm text-gray-500">
+                  웨이포인트: {route.waypoints}개
+                </p>
               </div>
-            ))}
-          </div>
-        )}
+
+              <button className="rounded bg-red-500 px-3 py-2 text-white hover:bg-red-600">
+                삭제
+              </button>
+            </div>
+          ))}
+        </div>
       </main>
 
       {/* 하단 버튼 */}
