@@ -139,3 +139,55 @@ async def get_uv_index(lat: float, lng: float):
             return uv_value
     except Exception:
         return 3  # fallback 기본값
+
+def calculate_sunrise_sunset(lat: float, lng: float):
+    from datetime import datetime, timedelta
+    import math
+
+    today = datetime.now()
+    day_of_year = today.timetuple().tm_yday
+
+    # 일출/일몰 계산 (간이 공식)
+    lng_hour = lng / 15
+    
+    # 일출
+    t_rise = day_of_year + ((6 - lng_hour) / 24)
+    m_rise = (0.9856 * t_rise) - 3.289
+    l_rise = m_rise + (1.916 * math.sin(math.radians(m_rise))) + (0.020 * math.sin(math.radians(2 * m_rise))) + 282.634
+    l_rise = l_rise % 360
+    ra_rise = math.degrees(math.atan(0.91764 * math.tan(math.radians(l_rise))))
+    ra_rise = ra_rise % 360
+    l_quad = (l_rise // 90) * 90
+    ra_quad = (ra_rise // 90) * 90
+    ra_rise = ra_rise + (l_quad - ra_quad)
+    ra_rise = ra_rise / 15
+    sin_dec = 0.39782 * math.sin(math.radians(l_rise))
+    cos_dec = math.cos(math.asin(sin_dec))
+    cos_h = (math.cos(math.radians(90.833)) - (sin_dec * math.sin(math.radians(lat)))) / (cos_dec * math.cos(math.radians(lat)))
+    h_rise = 360 - math.degrees(math.acos(cos_h))
+    h_rise = h_rise / 15
+    t_rise = h_rise + ra_rise - (0.06571 * t_rise) - 6.622
+    ut_rise = (t_rise - lng_hour) % 24
+    sunrise_hour = int((ut_rise + 9) % 24)  # KST (UTC+9)
+
+    # 일몰
+    t_set = day_of_year + ((18 - lng_hour) / 24)
+    m_set = (0.9856 * t_set) - 3.289
+    l_set = m_set + (1.916 * math.sin(math.radians(m_set))) + (0.020 * math.sin(math.radians(2 * m_set))) + 282.634
+    l_set = l_set % 360
+    ra_set = math.degrees(math.atan(0.91764 * math.tan(math.radians(l_set))))
+    ra_set = ra_set % 360
+    l_quad = (l_set // 90) * 90
+    ra_quad = (ra_set // 90) * 90
+    ra_set = ra_set + (l_quad - ra_quad)
+    ra_set = ra_set / 15
+    sin_dec = 0.39782 * math.sin(math.radians(l_set))
+    cos_dec = math.cos(math.asin(sin_dec))
+    cos_h = (math.cos(math.radians(90.833)) - (sin_dec * math.sin(math.radians(lat)))) / (cos_dec * math.cos(math.radians(lat)))
+    h_set = math.degrees(math.acos(cos_h))
+    h_set = h_set / 15
+    t_set = h_set + ra_set - (0.06571 * t_set) - 6.622
+    ut_set = (t_set - lng_hour) % 24
+    sunset_hour = int((ut_set + 9) % 24)  # KST (UTC+9)
+
+    return sunrise_hour, sunset_hour
