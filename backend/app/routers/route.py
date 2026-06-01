@@ -1,10 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from typing import List, Dict
 from datetime import datetime
 from app.services.weather_service import get_weather, get_uv_index, calculate_sunrise_sunset
 from app.services.context_engine import get_context_tags
 from app.services.route_engine import build_routes
 
+from app.routers.auth import get_current_user
+
 router = APIRouter(prefix="/api/route", tags=["route"])
+
+class CustomRouteRequest(BaseModel):
+    name: str
+    waypoints: List[Dict[str, float]]
+
 
 @router.get("/recommend")
 async def recommend_route(start_lat: float, start_lng: float, end_lat: float, end_lng: float):
@@ -13,12 +22,10 @@ async def recommend_route(start_lat: float, start_lng: float, end_lat: float, en
     
     # 2. 자외선 지수 실제 API로 가져오기
     uv_index = await get_uv_index(start_lat, start_lng)
-    weather_data["uv_index"] = uv_index  # 날씨 데이터에 반영
+    weather_data["uv_index"] = uv_index
 
     # 3. 현재 시각 + 일출/일몰 (고정값)
     current_time = datetime.now().hour
-    
-    # 일출/일몰 계산
     sunrise, sunset = calculate_sunrise_sunset(start_lat, start_lng)
 
     # 4. 상황 태그 판단
@@ -46,4 +53,26 @@ async def recommend_route(start_lat: float, start_lng: float, end_lat: float, en
         "weather": weather_data,
         "recommendation": recommendation,
         "routes": routes
+    }
+
+
+@router.post("/custom")
+async def save_custom_route(
+    request: CustomRouteRequest,
+    username: str = Depends(get_current_user)
+):
+    """
+    로그인한 유저만 접근 가능한 커스텀 경로 저장 API
+    """
+    # TODO: 추후 DB 연동 시 여기에 실제 DB insert 로직 추가
+    
+    # 임시 / DB에 잘 저장되었다고 가정하고 프론트엔드에 응답 보내기
+    return {
+        "success": True,
+        "message": "커스텀 경로가 성공적으로 저장되었습니다.",
+        "data": {
+            "saved_by": username,  # 토큰에서 정상적으로 뽑아낸 유저 아이디
+            "route_name": request.name,
+            "waypoints_count": len(request.waypoints)
+        }
     }
