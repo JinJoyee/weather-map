@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { FaClock, FaSun, FaStar } from "react-icons/fa";
+import { fetchRouteRecommend } from "../../api/route";
 
 const routeTypes = [
   {
@@ -25,6 +27,53 @@ const routeTypes = [
 ];
 
 export default function RouteCompare() {
+  const [routes, setRoutes] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadRoutes = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const data = await fetchRouteRecommend(
+          36.3504,
+          127.3845,
+          36.3623,
+          127.3568
+        );
+
+        setRoutes(data);
+      } catch (err) {
+        console.error(err);
+        setError("경로를 불러오지 못했습니다");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRoutes();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <p className="text-lg">경로를 불러오는 중...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <p className="text-lg text-red-500">
+          경로를 불러오지 못했습니다
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <h1 className="mb-6 text-2xl font-bold">
