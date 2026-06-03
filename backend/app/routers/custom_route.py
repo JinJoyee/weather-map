@@ -57,3 +57,21 @@ def get_custom_routes(
         raise HTTPException(status_code=401, detail="사용자를 찾을 수 없습니다")
     routes = db.query(CustomRoute).filter(CustomRoute.user_id == user.id).all()
     return {"total": len(routes), "routes": routes}
+
+
+@router.get("/{route_id}")
+def get_custom_route(
+    route_id: int,
+    username: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="사용자를 찾을 수 없습니다")
+    route = db.query(CustomRoute).filter(
+        CustomRoute.id == route_id,
+        CustomRoute.user_id == user.id,
+    ).first()
+    if not route:
+        raise HTTPException(status_code=404, detail="경로를 찾을 수 없습니다")
+    return route
