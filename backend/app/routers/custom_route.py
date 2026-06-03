@@ -75,3 +75,22 @@ def get_custom_route(
     if not route:
         raise HTTPException(status_code=404, detail="경로를 찾을 수 없습니다")
     return route
+
+
+@router.delete("/{route_id}", status_code=204)
+def delete_custom_route(
+    route_id: int,
+    username: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="사용자를 찾을 수 없습니다")
+    route = db.query(CustomRoute).filter(CustomRoute.id == route_id).first()
+    if not route:
+        raise HTTPException(status_code=404, detail="경로를 찾을 수 없습니다")
+    if route.user_id != user.id:
+        raise HTTPException(status_code=403, detail="삭제 권한이 없습니다")
+    db.delete(route)
+    db.commit()
+    return None
