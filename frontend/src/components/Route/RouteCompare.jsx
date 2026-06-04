@@ -3,71 +3,93 @@ import { useNavigate } from "react-router-dom";
 import { FaClock, FaSun, FaStar } from "react-icons/fa";
 import { fetchRouteRecommend } from "../../api/route";
 
-const START_LAT = 36.3504;
-const START_LNG = 127.3845;
-const END_LAT = 36.3623;
-const END_LNG = 127.3568;
-
 const ROUTE_STYLES = {
   normal:  { color: "#3B82F6" },
   context: { color: "#F59E0B" },
 };
 
+const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
+
 export default function RouteCompare() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const polylinesRef = useRef({});
+  const startMarkerRef = useRef(null);
+  const endMarkerRef = useRef(null);
+  const pickStepRef = useRef(0); // 0=출발지 선택 대기, 1=도착지 선택 대기, 2=완료
 
+  const [startPos, setStartPos] = useState(null);
+  const [endPos, setEndPos] = useState(null);
   const [routes, setRoutes] = useState(null);
   const [recommendation, setRecommendation] = useState("");
   const [contextTags, setContextTags] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
 
   const navigate = useNavigate();
 
+  // 지도 초기화 + 클릭 이벤트 등록 (최초 1회)
   useEffect(() => {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
 
-    const center = new kakao.maps.LatLng(
-      (START_LAT + END_LAT) / 2,
-      (START_LNG + END_LNG) / 2
-    );
-    mapInstance.current = new kakao.maps.Map(mapRef.current, { center, level: 6 });
+    const center = new kakao.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng);
+    mapInstance.current = new kakao.maps.Map(mapRef.current, { center, level: 7 });
 
-    new kakao.maps.Marker({
-      position: new kakao.maps.LatLng(START_LAT, START_LNG),
-      map: mapInstance.current,
-    });
-    new kakao.maps.Marker({
-      position: new kakao.maps.LatLng(END_LAT, END_LNG),
-      map: mapInstance.current,
+    kakao.maps.event.addListener(mapInstance.current, "click", (mouseEvent) => {
+      if (pickStepRef.current >= 2) return;
+
+      const lat = mouseEvent.latLng.getLat();
+      const lng = mouseEvent.latLng.getLng();
+      const k = window.kakao;
+
+      if (pickStepRef.current === 0) {
+        if (startMarkerRef.current) startMarkerRef.current.setMap(null);
+        startMarkerRef.current = new k.maps.Marker({
+          position: mouseEvent.latLng,
+          map: mapInstance.current,
+        });
+        setStartPos({ lat, lng });
+        pickStepRef.current = 1;
+      } else {
+        if (endMarkerRef.current) endMarkerRef.current.setMap(null);
+        endMarkerRef.current = new k.maps.Marker({
+          position: mouseEvent.latLng,
+          map: mapInstance.current,
+        });
+        setEndPos({ lat, lng });
+        pickStepRef.current = 2;
+      }
     });
   }, []);
 
+  // 출발지/도착지 모두 설정되면 경로 조회
   useEffect(() => {
+    if (!startPos || !endPos) return;
+
     const loadRoutes = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await fetchRouteRecommend(START_LAT, START_LNG, END_LAT, END_LNG);
+        setRoutes(null);
+        const data = await fetchRouteRecommend(
+          startPos.lat, startPos.lng,
+          endPos.lat, endPos.lng
+        );
         setRoutes(data.routes);
         setRecommendation(data.recommendation);
         setContextTags(data.context_tags || []);
       } catch {
-        setRoutes(null);
-        setRecommendation("");
-        setContextTags([]);
         setError("경로를 불러오지 못했습니다.");
       } finally {
         setIsLoading(false);
       }
     };
     loadRoutes();
-  }, []);
+  }, [startPos, endPos]);
 
+  // 폴리라인 그리기
   useEffect(() => {
     const { kakao } = window;
     if (!routes || !mapInstance.current || !kakao) return;
@@ -75,11 +97,17 @@ export default function RouteCompare() {
     Object.values(polylinesRef.current).forEach((pl) => pl.setMap(null));
     polylinesRef.current = {};
 
+    const bounds = new kakao.maps.LatLngBounds();
+    let hasPolyline = false;
+
     Object.entries(ROUTE_STYLES).forEach(([key, style]) => {
       const polylineData = routes[key]?.polyline;
       if (!polylineData?.length) return;
 
       const path = polylineData.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+      path.forEach((p) => bounds.extend(p));
+      hasPolyline = true;
+
       const polyline = new kakao.maps.Polyline({
         path,
         strokeWeight: 5,
@@ -90,7 +118,35 @@ export default function RouteCompare() {
       polyline.setMap(mapInstance.current);
       polylinesRef.current[key] = polyline;
     });
-  }, [routes]);
+
+    if (hasPolyline) {
+      mapInstance.current.setBounds(bounds);
+    } else if (startPos && endPos) {
+      bounds.extend(new kakao.maps.LatLng(startPos.lat, startPos.lng));
+      bounds.extend(new kakao.maps.LatLng(endPos.lat, endPos.lng));
+      mapInstance.current.setBounds(bounds);
+    }
+  }, [routes, startPos, endPos]);
+
+  const handleReset = () => {
+    if (startMarkerRef.current) startMarkerRef.current.setMap(null);
+    if (endMarkerRef.current) endMarkerRef.current.setMap(null);
+    startMarkerRef.current = null;
+    endMarkerRef.current = null;
+    pickStepRef.current = 0;
+
+    Object.values(polylinesRef.current).forEach((pl) => pl.setMap(null));
+    polylinesRef.current = {};
+
+    setStartPos(null);
+    setEndPos(null);
+    setRoutes(null);
+    setRecommendation("");
+    setContextTags([]);
+    setError(null);
+    setSelectedRoute(null);
+    setIsLoading(false);
+  };
 
   const handleSelectRoute = (key) => {
     setSelectedRoute(key);
@@ -103,7 +159,8 @@ export default function RouteCompare() {
   };
 
   const openKakaoNavi = () => {
-    const url = `https://map.kakao.com/link/from/출발지,${START_LAT},${START_LNG}/to/목적지,${END_LAT},${END_LNG}`;
+    if (!startPos || !endPos) return;
+    const url = `https://map.kakao.com/link/from/출발지,${startPos.lat},${startPos.lng}/to/목적지,${endPos.lat},${endPos.lng}`;
     window.open(url, "_blank");
   };
 
@@ -117,7 +174,7 @@ export default function RouteCompare() {
     },
     {
       key: "context",
-      title: "자외선 회피 경로",
+      title: "날씨 최적 경로",
       icon: FaSun,
       cardClass: "border-yellow-400 bg-yellow-50",
       btnClass: "bg-yellow-500 hover:bg-yellow-600",
@@ -133,16 +190,48 @@ export default function RouteCompare() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div ref={mapRef} className="w-full" style={{ height: "45vh" }} />
+      {/* 지도 영역 */}
+      <div className="relative w-full" style={{ height: "45vh" }}>
+        <div ref={mapRef} className="w-full h-full" />
 
+        {!startPos && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-white/95 rounded-lg px-4 py-2 shadow-md text-sm font-semibold text-gray-700 whitespace-nowrap pointer-events-none">
+            📍 출발지를 지도에서 클릭하세요
+          </div>
+        )}
+        {startPos && !endPos && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-white/95 rounded-lg px-4 py-2 shadow-md text-sm font-semibold text-gray-700 whitespace-nowrap pointer-events-none">
+            🏁 도착지를 지도에서 클릭하세요
+          </div>
+        )}
+        {startPos && endPos && (
+          <button
+            onClick={handleReset}
+            className="absolute top-3 right-3 z-10 bg-white/95 rounded-lg px-3 py-1.5 shadow-md text-xs font-semibold text-gray-700 hover:bg-white transition"
+          >
+            다시 설정
+          </button>
+        )}
+      </div>
+
+      {/* 하단 패널 */}
       <div className="flex-1 overflow-y-auto p-4">
         <h1 className="mb-2 text-xl font-bold">추천 경로 비교</h1>
 
-        {isLoading ? (
-          <p className="text-gray-500">경로를 불러오는 중...</p>
+        {!startPos || !endPos ? (
+          <p className="text-gray-400 text-sm mt-6 text-center">
+            지도에서 출발지와 도착지를 선택하면 경로를 추천해 드립니다.
+          </p>
+        ) : isLoading ? (
+          <p className="text-gray-500 mt-4">경로를 불러오는 중...</p>
         ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : (
+          <div className="mt-4">
+            <p className="text-red-500 mb-2">{error}</p>
+            <button onClick={handleReset} className="text-sm text-primary underline">
+              다시 설정
+            </button>
+          </div>
+        ) : routes ? (
           <>
             {recommendation && (
               <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700">
@@ -196,7 +285,7 @@ export default function RouteCompare() {
                     <div className="flex flex-wrap gap-2">
                       {card.key === "custom" ? (
                         <button
-                          onClick={() => navigate("/custom")}
+                          onClick={() => navigate("/draw")}
                           className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
                         >
                           경로 그리기
@@ -223,7 +312,7 @@ export default function RouteCompare() {
               })}
             </div>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
