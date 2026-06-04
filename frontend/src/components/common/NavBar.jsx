@@ -1,5 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { logout, getToken } from '../../api/auth';
+import { NavLink } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { to: '/map', label: '지도' },
@@ -8,14 +7,6 @@ const NAV_ITEMS = [
 ];
 
 function NavBar() {
-  const navigate = useNavigate();
-  const isLoggedIn = Boolean(getToken());
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   return (
     <nav className="bg-secondary text-white px-6 py-3 flex items-center gap-8 shadow-md">
       <NavLink
@@ -42,24 +33,6 @@ function NavBar() {
             {label}
           </NavLink>
         ))}
-      </div>
-
-      <div className="ml-auto">
-        {isLoggedIn ? (
-          <button
-            onClick={handleLogout}
-            className="text-sm font-medium text-white hover:opacity-75 transition-all"
-          >
-            로그아웃
-          </button>
-        ) : (
-          <NavLink
-            to="/login"
-            className="text-sm font-medium text-white hover:opacity-75 transition-all"
-          >
-            로그인
-          </NavLink>
-        )}
       </div>
     </nav>
   );
