@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaClock, FaSun, FaStar } from "react-icons/fa";
+import { FiClock, FiSun, FiStar } from "react-icons/fi";
 import { fetchRouteRecommend } from "../../api/route";
 
 function calcTravelTime(route, mode) {
@@ -21,6 +21,25 @@ const ROUTE_STYLES = {
   context: { color: "#F59E0B", label: "날씨 최적 경로", strokeStyle: "solid" },
 };
 
+// 클래스 이름 전체를 문자열로 — Tailwind 빌드 시 동적 조합 클래스는 제거됨
+const ACCENTS = {
+  normal:  { bar: "bg-[#2563EB]", icon: "text-[#2563EB]", desc: "시간 최단 · 카카오 내비" },
+  context: { bar: "bg-[#F59E0B]", icon: "text-[#F59E0B]", desc: "날씨 맞춤 · 쾌적한 경로" },
+  custom:  { bar: "bg-[#16A34A]", icon: "text-[#16A34A]", desc: "직접 그린 나만의 경로" },
+};
+
+const MODES = [
+  { key: "walk", label: "도보" },
+  { key: "bike", label: "자전거" },
+  { key: "car",  label: "자동차" },
+];
+
+const CARDS = [
+  { key: "normal",  title: "최단 경로",     Icon: FiClock },
+  { key: "context", title: "날씨 최적 경로", Icon: FiSun  },
+  { key: "custom",  title: "커스텀 경로",    Icon: FiStar },
+];
+
 const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
 
 export default function RouteCompare() {
@@ -29,7 +48,7 @@ export default function RouteCompare() {
   const polylinesRef = useRef({});
   const startMarkerRef = useRef(null);
   const endMarkerRef = useRef(null);
-  const pickStepRef = useRef(0); // 0=출발지 선택 대기, 1=도착지 선택 대기, 2=완료
+  const pickStepRef = useRef(0);
 
   const [startPos, setStartPos] = useState(null);
   const [endPos, setEndPos] = useState(null);
@@ -37,7 +56,6 @@ export default function RouteCompare() {
   const [recommendation, setRecommendation] = useState("");
   const [contextTags, setContextTags] = useState([]);
   const [warnings, setWarnings] = useState([]);
-  const [scores, setScores] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
@@ -45,7 +63,6 @@ export default function RouteCompare() {
 
   const navigate = useNavigate();
 
-  // 지도 초기화 + 클릭 이벤트 등록 (최초 1회)
   useEffect(() => {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
@@ -80,7 +97,6 @@ export default function RouteCompare() {
     });
   }, []);
 
-  // 출발지/도착지 모두 설정되면 경로 조회
   useEffect(() => {
     if (!startPos || !endPos) return;
 
@@ -91,13 +107,12 @@ export default function RouteCompare() {
         setRoutes(null);
         const data = await fetchRouteRecommend(
           startPos.lat, startPos.lng,
-          endPos.lat, endPos.lng
+          endPos.lat,   endPos.lng
         );
         setRoutes(data.routes);
         setRecommendation(data.recommendation);
         setContextTags(data.context_tags || []);
         setWarnings(data.warnings || []);
-        setScores(data.scores || null);
       } catch {
         setError("경로를 불러오지 못했습니다.");
       } finally {
@@ -107,7 +122,6 @@ export default function RouteCompare() {
     loadRoutes();
   }, [startPos, endPos]);
 
-  // 폴리라인 그리기
   useEffect(() => {
     const { kakao } = window;
     if (!routes || !mapInstance.current || !kakao) return;
@@ -121,7 +135,6 @@ export default function RouteCompare() {
     const bounds = new kakao.maps.LatLngBounds();
     let hasPolyline = false;
 
-    // 경로별 path 먼저 계산
     const pathMap = {};
     Object.entries(ROUTE_STYLES).forEach(([key]) => {
       const polylineData = routes[key]?.polyline;
@@ -132,7 +145,6 @@ export default function RouteCompare() {
       hasPolyline = true;
     });
 
-    // 1단계: 외곽선(흰색) 전부 먼저 그리기
     Object.entries(ROUTE_STYLES).forEach(([key]) => {
       const path = pathMap[key];
       if (!path) return;
@@ -147,7 +159,6 @@ export default function RouteCompare() {
       polylinesRef.current[key] = { outer: outerPl, inner: null };
     });
 
-    // 2단계: 색상 선 전부 나중에 그리기 (항상 흰 외곽선 위에 위치)
     Object.entries(ROUTE_STYLES).forEach(([key, style]) => {
       const path = pathMap[key];
       if (!path) return;
@@ -174,10 +185,10 @@ export default function RouteCompare() {
 
   const handleReset = () => {
     if (startMarkerRef.current) startMarkerRef.current.setMap(null);
-    if (endMarkerRef.current) endMarkerRef.current.setMap(null);
+    if (endMarkerRef.current)   endMarkerRef.current.setMap(null);
     startMarkerRef.current = null;
-    endMarkerRef.current = null;
-    pickStepRef.current = 0;
+    endMarkerRef.current   = null;
+    pickStepRef.current    = 0;
 
     Object.values(polylinesRef.current).forEach(({ outer, inner }) => {
       outer?.setMap(null);
@@ -191,7 +202,6 @@ export default function RouteCompare() {
     setRecommendation("");
     setContextTags([]);
     setWarnings([]);
-    setScores(null);
     setError(null);
     setSelectedRoute(null);
     setIsLoading(false);
@@ -201,14 +211,8 @@ export default function RouteCompare() {
     setSelectedRoute(key);
     Object.entries(polylinesRef.current).forEach(([k, { outer, inner }]) => {
       const isSelected = k === key;
-      outer?.setOptions({
-        strokeWeight: isSelected ? 16 : 10,
-        strokeOpacity: isSelected ? 1.0 : 0.4,
-      });
-      inner?.setOptions({
-        strokeWeight: isSelected ? 10 : 6,
-        strokeOpacity: isSelected ? 1.0 : 0.3,
-      });
+      outer?.setOptions({ strokeWeight: isSelected ? 16 : 10, strokeOpacity: isSelected ? 1.0 : 0.4 });
+      inner?.setOptions({ strokeWeight: isSelected ? 10 : 6,  strokeOpacity: isSelected ? 1.0 : 0.3 });
     });
   };
 
@@ -218,33 +222,9 @@ export default function RouteCompare() {
     window.open(url, "_blank");
   };
 
-  const cards = [
-    {
-      key: "normal",
-      title: "최단 경로",
-      icon: FaClock,
-      cardClass: "border-blue-400 bg-blue-50",
-      btnClass: "bg-blue-500 hover:bg-blue-600",
-    },
-    {
-      key: "context",
-      title: "날씨 최적 경로",
-      icon: FaSun,
-      cardClass: "border-yellow-400 bg-yellow-50",
-      btnClass: "bg-yellow-500 hover:bg-yellow-600",
-    },
-    {
-      key: "custom",
-      title: "커스텀 경로",
-      icon: FaStar,
-      cardClass: "border-green-400 bg-green-50",
-      btnClass: "bg-green-500 hover:bg-green-600",
-    },
-  ];
-
   return (
     <div className="flex flex-col h-screen">
-      {/* 지도 영역 */}
+      {/* 지도 */}
       <div className="relative w-full" style={{ height: "45vh" }}>
         <div ref={mapRef} className="w-full h-full" />
 
@@ -267,7 +247,6 @@ export default function RouteCompare() {
           </button>
         )}
 
-        {/* 지도 범례 */}
         {routes && (
           <div className="absolute bottom-3 left-3 z-10 bg-white/95 rounded-lg px-3 py-2 shadow-md pointer-events-none">
             {Object.entries(ROUTE_STYLES).map(([key, style]) => (
@@ -282,12 +261,12 @@ export default function RouteCompare() {
 
       {/* 하단 패널 */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold">추천 경로 비교</h1>
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-xl font-bold text-gray-900">추천 경로 비교</h1>
           {startPos && endPos && (
             <button
               onClick={handleReset}
-              className="text-sm text-primary font-medium hover:opacity-70 transition-all"
+              className="text-sm text-[#2563EB] font-medium hover:opacity-70 transition-all"
             >
               새 경로 탐색
             </button>
@@ -303,15 +282,21 @@ export default function RouteCompare() {
         ) : error ? (
           <div className="mt-4">
             <p className="text-red-500 mb-2">{error}</p>
-            <button onClick={handleReset} className="text-sm text-primary underline">
+            <button onClick={handleReset} className="text-sm text-[#2563EB] underline">
               다시 설정
             </button>
           </div>
         ) : routes ? (
           <>
+            {/* 추천 배너 + 컨텍스트 태그 통합 */}
             {recommendation && (
-              <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700 font-medium">
-                {recommendation}
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                <span className="flex-1">{recommendation}</span>
+                {contextTags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-blue-100 px-2 py-0.5 text-xs">
+                    #{tag}
+                  </span>
+                ))}
               </div>
             )}
 
@@ -325,108 +310,104 @@ export default function RouteCompare() {
               </div>
             )}
 
-            {/* 가중치 바: 추후 사용자 조절 기능 추가 시 복원 */}
-
-            {contextTags.length > 0 && (
-              <div className="mb-4 flex flex-wrap gap-2">
-                {contextTags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-gray-200 px-3 py-1 text-xs">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3 md:flex-row">
-              {cards.map((card) => {
-                const Icon = card.icon;
-                const isSelected = selectedRoute === card.key;
-                const route = routes?.[card.key];
+            {/* 카드 3개 */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {CARDS.map(({ key, title, Icon }) => {
+                const accent    = ACCENTS[key];
+                const route     = routes?.[key];
+                const isSelected = selectedRoute === key;
 
                 return (
                   <div
-                    key={card.key}
-                    className={`flex-1 rounded-lg border-2 p-4 shadow transition ${card.cardClass} ${
-                      isSelected ? "ring-2 ring-offset-1 ring-gray-500" : ""
+                    key={key}
+                    className={`overflow-hidden rounded-xl border bg-white shadow-sm transition ${
+                      isSelected
+                        ? "border-[#2563EB] ring-2 ring-[#2563EB]/20"
+                        : "border-gray-200"
                     }`}
                   >
-                    <div className="mb-2 flex items-center gap-2">
-                      <Icon size={18} />
-                      <h2 className="text-base font-semibold">{card.title}</h2>
-                    </div>
+                    {/* 상단 컬러 띠 */}
+                    <div className={`h-[3px] w-full ${accent.bar}`} />
 
-                    <p className="mb-1 text-sm text-gray-700">
-                      {card.key === "custom"
-                        ? "직접 그린 나만의 경로"
-                        : (route?.description ?? "설명 없음")}
-                    </p>
+                    <div className="p-4">
+                      {/* 헤더 */}
+                      <div className="mb-1 flex items-center gap-2">
+                        <Icon className={`text-base ${accent.icon}`} />
+                        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+                      </div>
+                      <p className="mb-3 text-xs text-gray-400">
+                        {key !== "custom" && route?.description
+                          ? route.description
+                          : accent.desc}
+                      </p>
 
-                    {card.key !== "custom" && (
-                      <>
-                        <div className="flex gap-1 mb-2 mt-1">
-                          {[
-                            { mode: "walk", label: "도보", icon: "🚶" },
-                            { mode: "bike", label: "자전거", icon: "🚲" },
-                            { mode: "car",  label: "자동차", icon: "🚗" },
-                          ].map(({ mode, label, icon }) => (
-                            <button
-                              key={mode}
-                              onClick={() => setTransportMode(mode)}
-                              className={`flex-1 text-xs py-1 rounded border transition ${
-                                transportMode === mode
-                                  ? "bg-gray-700 text-white border-gray-700"
-                                  : "bg-white text-gray-500 border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              {icon} {label}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="mb-2 text-sm font-semibold text-gray-800">
-                          {route
-                            ? calcTravelTime(route, transportMode) != null
-                              ? `약 ${calcTravelTime(route, transportMode)}분`
-                              : "정보 없음"
-                            : "—"}
-                          {route?.distance != null && (
-                            <span className="ml-2 text-xs font-normal text-gray-500">
-                              {formatDistance(route.distance)}
-                            </span>
-                          )}
-                        </div>
-                        <p className="mb-3 text-xs text-gray-500">
-                          경유지 수: {route?.waypoints?.length ?? 0}
-                          {route?.polyline?.length
-                            ? ` · 경로 좌표 ${route.polyline.length}점`
-                            : " · 경로 없음"}
-                        </p>
-                      </>
-                    )}
-
-                    <div className="flex flex-wrap gap-2">
-                      {card.key === "custom" ? (
-                        <button
-                          onClick={() => navigate("/draw")}
-                          className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
-                        >
-                          경로 그리기
-                        </button>
-                      ) : (
+                      {/* 이동수단 토글 */}
+                      {key !== "custom" && (
                         <>
-                          <button
-                            onClick={() => handleSelectRoute(card.key)}
-                            className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
-                          >
-                            {isSelected ? "✓ 선택됨" : "이 경로 선택"}
-                          </button>
-                          <button
-                            onClick={openKakaoNavi}
-                            className="rounded bg-yellow-300 px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-yellow-400 transition"
-                          >
-                            카카오 내비
-                          </button>
+                          <div className="mb-3 flex overflow-hidden rounded-lg border border-gray-200">
+                            {MODES.map((m, i) => (
+                              <button
+                                key={m.key}
+                                onClick={() => setTransportMode(m.key)}
+                                className={`flex-1 py-1.5 text-xs transition-colors ${
+                                  i > 0 ? "border-l border-gray-200" : ""
+                                } ${
+                                  transportMode === m.key
+                                    ? "bg-[#2563EB] text-white"
+                                    : "text-gray-400 hover:bg-gray-50"
+                                }`}
+                              >
+                                {m.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="mb-3 text-sm font-semibold text-gray-800">
+                            {route
+                              ? calcTravelTime(route, transportMode) != null
+                                ? `약 ${calcTravelTime(route, transportMode)}분`
+                                : "정보 없음"
+                              : "—"}
+                            {route?.distance != null && (
+                              <span className="ml-2 text-xs font-normal text-gray-400">
+                                · {formatDistance(route.distance)}
+                              </span>
+                            )}
+                          </div>
                         </>
                       )}
+
+                      {/* 커스텀 경로 안내 */}
+                      {key === "custom" && (
+                        <p className="mb-3 text-sm text-gray-300">아직 경로 없음</p>
+                      )}
+
+                      {/* 버튼 */}
+                      <div className="flex gap-2">
+                        {key === "custom" ? (
+                          <button
+                            onClick={() => navigate("/draw")}
+                            className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-50"
+                          >
+                            경로 그리기
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleSelectRoute(key)}
+                              className="flex-1 rounded-lg bg-[#2563EB] py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                            >
+                              {isSelected ? "✓ 선택됨" : "이 경로 선택"}
+                            </button>
+                            <button
+                              onClick={openKakaoNavi}
+                              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-50"
+                            >
+                              카카오 내비
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
