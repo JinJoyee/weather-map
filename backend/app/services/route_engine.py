@@ -220,9 +220,9 @@ async def build_routes(
         context_tags, start_lat, start_lng, end_lat, end_lng, scores
     )
 
-    # 최단 경로 (시간 기준, 카카오 모빌리티 그대로)
+    # 최단 경로 (카카오 RECOMMEND — TIME은 고속화도로 우선이라 도시 내에서 거리가 역전됨)
     normal_polyline, normal_duration, normal_distance = await _fetch_kakao_route_full(
-        start_lat, start_lng, end_lat, end_lng, priority="TIME"
+        start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND"
     )
 
     # 날씨 최적 경로: 경유지 포함 시도 → 실패 시 경유지 없이 재시도 → 최종 폴백 normal 재활용
@@ -265,7 +265,7 @@ async def build_routes(
     return {
         "normal": {
             "type": "normal",
-            "description": "시간 최단 경로 (카카오 내비)",
+            "description": "추천 경로 (카카오 내비)",
             "waypoints": [],
             "route_option": "normal",
             "polyline": normal_polyline,
