@@ -2,7 +2,7 @@ import httpx
 import math
 from app.config import KAKAO_REST_API_KEY
 
-# 정적 경유지 (야간 + 테스트/폴백용)
+# 정적 경유지 (야간 전용 + 폴백)
 CONTEXT_WAYPOINTS = {
     "야간": [
         {"lat": 36.3284, "lng": 127.4282, "label": "으능정이 문화의거리", "type": "lit_road"},
@@ -47,7 +47,7 @@ def _haversine_m(lat1, lng1, lat2, lng2) -> float:
 
 
 async def _search_place_near(lat: float, lng: float, keyword: str, radius: int) -> dict | None:
-    """카카오 로컬 API로 주변 장소를 검색해 경유지 반환."""
+    """카카오 로컬 API로 주변 장소 검색."""
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
     params = {
@@ -78,33 +78,35 @@ async def _get_context_waypoint(
     tags: list,
     start_lat: float, start_lng: float,
     end_lat: float, end_lng: float,
+    scores: dict = None,
 ) -> list:
     """
-    출발지-도착지 중간점 주변에서 상황에 맞는 경유지를 동적으로 검색.
-    - 자외선_매우높음 / 비 / 눈 : 가까운 지하상가·실내 시설
-    - 자외선_높음 : 가까운 공원
-    - 야간 : 고정 밝은 거리 (정적 폴백)
+    가중치(scores)를 기반으로 경유지 전략 결정.
+
+    shade >= 40 → 공원/수목원 경유 (UV 높음/매우높음 + 더위)
+    safety  + 야간 → 정적 밝은 거리 경유
+    비/눈 → 경유지 없이 기본 경로 + 경고 메시지만 (지하상가 경유는 비실용적)
     """
+    s = scores or {}
+    shade_score = s.get("shade", 0)
+
     mid_lat = (start_lat + end_lat) / 2
     mid_lng = (start_lng + end_lng) / 2
     dist_m = _haversine_m(start_lat, start_lng, end_lat, end_lng)
     radius = int(min(max(dist_m / 2, 1000), 3000))
 
-    if "자외선_매우높음" in tags or "비" in tags or "눈" in tags:
-        wp = await _search_place_near(mid_lat, mid_lng, "지하상가", radius)
-        if not wp:
-            wp = await _search_place_near(mid_lat, mid_lng, "쇼핑몰", radius)
-        return [wp] if wp else CONTEXT_WAYPOINTS.get("비", [])[:1]
-
-    if "자외선_높음" in tags:
+    # 자외선 높음 이상 (shade 점수 40+) → 실제 경로에서 가까운 공원 경유
+    if shade_score >= 40:
         wp = await _search_place_near(mid_lat, mid_lng, "공원", radius)
         if not wp:
             wp = await _search_place_near(mid_lat, mid_lng, "수목원", radius)
         return [wp] if wp else CONTEXT_WAYPOINTS.get("자외선_높음", [])[:1]
 
+    # 야간 → 밝은 거리 정적 경유지
     if "야간" in tags:
         return CONTEXT_WAYPOINTS["야간"][:1]
 
+    # 비/눈 → 경유지 없음 (경고 메시지로 대응)
     return []
 
 
@@ -151,18 +153,18 @@ async def build_routes(
     context_tags: list,
     start_lat: float, start_lng: float,
     end_lat: float, end_lng: float,
+    scores: dict = None,
 ) -> dict:
-    # 상황별 경유지 (동적 검색 우선, 폴백 정적)
     context_wps = await _get_context_waypoint(
-        context_tags, start_lat, start_lng, end_lat, end_lng
+        context_tags, start_lat, start_lng, end_lat, end_lng, scores
     )
 
-    # 최단 경로 (시간 기준)
+    # 최단 경로 (시간 기준, 카카오 모빌리티 그대로)
     normal_polyline = await fetch_kakao_route(
         start_lat, start_lng, end_lat, end_lng, priority="TIME"
     )
 
-    # 날씨 최적 경로 (경유지 포함)
+    # 날씨 최적 경로 (경유지 포함 시 우회, 없으면 RECOMMEND 기본)
     context_polyline = await fetch_kakao_route(
         start_lat, start_lng, end_lat, end_lng,
         waypoints=context_wps if context_wps else None,
@@ -171,16 +173,15 @@ async def build_routes(
 
     route_option = "bigroad" if "야간" in context_tags else "normal"
 
-    # 경로 설명 동적 생성
     wp_label = context_wps[0]["label"] if context_wps else ""
-    if "자외선_매우높음" in context_tags:
-        context_desc = f"실내 경유 경로{f' ({wp_label})' if wp_label else ''}"
-    elif "비" in context_tags or "눈" in context_tags:
-        context_desc = f"비/눈 회피 실내 경로{f' ({wp_label})' if wp_label else ''}"
-    elif "자외선_높음" in context_tags:
-        context_desc = f"자외선 회피 그늘 경로{f' ({wp_label})' if wp_label else ''}"
+    s = scores or {}
+
+    if s.get("shade", 0) >= 40:
+        context_desc = f"자외선 회피 그늘 경로{f' — {wp_label} 경유' if wp_label else ''}"
     elif "야간" in context_tags:
-        context_desc = f"야간 밝은 거리 경로{f' ({wp_label})' if wp_label else ''}"
+        context_desc = f"야간 밝은 거리 경로{f' — {wp_label} 경유' if wp_label else ''}"
+    elif "비" in context_tags or "눈" in context_tags:
+        context_desc = "날씨 안전 경로 (카카오 추천 기준)"
     else:
         context_desc = "날씨 최적 경로"
 

@@ -23,6 +23,8 @@ export default function RouteCompare() {
   const [routes, setRoutes] = useState(null);
   const [recommendation, setRecommendation] = useState("");
   const [contextTags, setContextTags] = useState([]);
+  const [warnings, setWarnings] = useState([]);
+  const [scores, setScores] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
@@ -80,6 +82,8 @@ export default function RouteCompare() {
         setRoutes(data.routes);
         setRecommendation(data.recommendation);
         setContextTags(data.context_tags || []);
+        setWarnings(data.warnings || []);
+        setScores(data.scores || null);
       } catch {
         setError("경로를 불러오지 못했습니다.");
       } finally {
@@ -143,6 +147,8 @@ export default function RouteCompare() {
     setRoutes(null);
     setRecommendation("");
     setContextTags([]);
+    setWarnings([]);
+    setScores(null);
     setError(null);
     setSelectedRoute(null);
     setIsLoading(false);
@@ -234,8 +240,42 @@ export default function RouteCompare() {
         ) : routes ? (
           <>
             {recommendation && (
-              <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700">
+              <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700 font-medium">
                 {recommendation}
+              </div>
+            )}
+
+            {warnings.length > 0 && (
+              <div className="mb-3 flex flex-col gap-1.5">
+                {warnings.map((w, i) => (
+                  <div key={i} className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+                    {w}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {scores && (scores.shade > 0 || scores.indoor > 0 || scores.safety > 0) && (
+              <div className="mb-4 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+                <p className="font-semibold mb-1.5 text-gray-700">경로 전략 가중치</p>
+                <div className="flex flex-col gap-1">
+                  {[
+                    { label: "그늘 경로", key: "shade", color: "bg-yellow-400" },
+                    { label: "실내 권장", key: "indoor", color: "bg-blue-400" },
+                    { label: "안전 경로", key: "safety", color: "bg-red-400" },
+                  ].map(({ label, key, color }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-16 shrink-0">{label}</span>
+                      <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                        <div
+                          className={`${color} h-1.5 rounded-full transition-all`}
+                          style={{ width: `${Math.min((scores[key] / 100) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="w-6 text-right">{scores[key]}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

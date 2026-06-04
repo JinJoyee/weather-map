@@ -110,7 +110,7 @@ def test_route_recommend_rain_recommendation():
         response = client.get(
             "/api/route/recommend?start_lat=36.35&start_lng=127.38&end_lat=36.36&end_lng=127.39"
         )
-    assert "실내 경로" in response.json()["recommendation"]
+    assert "안전 경로" in response.json()["recommendation"]
 
 
 def test_route_recommend_snow_recommendation():
