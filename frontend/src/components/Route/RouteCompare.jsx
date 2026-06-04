@@ -9,8 +9,8 @@ const END_LAT = 36.3623;
 const END_LNG = 127.3568;
 
 const ROUTE_STYLES = {
-  normal:  { color: "#3B82F6", label: "최단 경로" },
-  context: { color: "#F59E0B", label: "상황 인식 경로" },
+  normal:  { color: "#3B82F6" },
+  context: { color: "#F59E0B" },
 };
 
 export default function RouteCompare() {
@@ -27,7 +27,6 @@ export default function RouteCompare() {
 
   const navigate = useNavigate();
 
-  // 지도 초기화
   useEffect(() => {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
@@ -38,20 +37,16 @@ export default function RouteCompare() {
     );
     mapInstance.current = new kakao.maps.Map(mapRef.current, { center, level: 6 });
 
-    // 출발지 마커
     new kakao.maps.Marker({
       position: new kakao.maps.LatLng(START_LAT, START_LNG),
       map: mapInstance.current,
     });
-
-    // 도착지 마커
     new kakao.maps.Marker({
       position: new kakao.maps.LatLng(END_LAT, END_LNG),
       map: mapInstance.current,
     });
   }, []);
 
-  // 경로 데이터 로드
   useEffect(() => {
     const loadRoutes = async () => {
       try {
@@ -62,6 +57,9 @@ export default function RouteCompare() {
         setRecommendation(data.recommendation);
         setContextTags(data.context_tags || []);
       } catch {
+        setRoutes(null);
+        setRecommendation("");
+        setContextTags([]);
         setError("경로를 불러오지 못했습니다.");
       } finally {
         setIsLoading(false);
@@ -70,7 +68,6 @@ export default function RouteCompare() {
     loadRoutes();
   }, []);
 
-  // polyline 그리기
   useEffect(() => {
     const { kakao } = window;
     if (!routes || !mapInstance.current || !kakao) return;
@@ -106,7 +103,6 @@ export default function RouteCompare() {
   };
 
   const openKakaoNavi = () => {
-    // 카카오맵 길찾기 웹 URL
     const url = `https://map.kakao.com/link/from/출발지,${START_LAT},${START_LNG}/to/목적지,${END_LAT},${END_LNG}`;
     window.open(url, "_blank");
   };
@@ -137,96 +133,96 @@ export default function RouteCompare() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* 지도 영역 */}
       <div ref={mapRef} className="w-full" style={{ height: "45vh" }} />
 
-      {/* 경로 카드 영역 */}
       <div className="flex-1 overflow-y-auto p-4">
         <h1 className="mb-2 text-xl font-bold">추천 경로 비교</h1>
-
-        {recommendation && (
-          <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700">
-            {recommendation}
-          </div>
-        )}
-
-        {contextTags.length > 0 && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {contextTags.map((tag) => (
-              <span key={tag} className="rounded-full bg-gray-200 px-3 py-1 text-xs">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
 
         {isLoading ? (
           <p className="text-gray-500">경로를 불러오는 중...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-          <div className="flex flex-col gap-3 md:flex-row">
-            {cards.map((card) => {
-              const Icon = card.icon;
-              const isSelected = selectedRoute === card.key;
-              const route = routes?.[card.key];
+          <>
+            {recommendation && (
+              <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700">
+                {recommendation}
+              </div>
+            )}
 
-              return (
-                <div
-                  key={card.key}
-                  className={`flex-1 rounded-lg border-2 p-4 shadow transition ${card.cardClass} ${
-                    isSelected ? "ring-2 ring-offset-1 ring-gray-500" : ""
-                  }`}
-                >
-                  <div className="mb-2 flex items-center gap-2">
-                    <Icon size={18} />
-                    <h2 className="text-base font-semibold">{card.title}</h2>
-                  </div>
+            {contextTags.length > 0 && (
+              <div className="mb-4 flex flex-wrap gap-2">
+                {contextTags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-gray-200 px-3 py-1 text-xs">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
-                  <p className="mb-1 text-sm text-gray-700">
-                    {card.key === "custom"
-                      ? "직접 그린 나만의 경로"
-                      : (route?.description ?? "설명 없음")}
-                  </p>
+            <div className="flex flex-col gap-3 md:flex-row">
+              {cards.map((card) => {
+                const Icon = card.icon;
+                const isSelected = selectedRoute === card.key;
+                const route = routes?.[card.key];
 
-                  {card.key !== "custom" && (
-                    <p className="mb-3 text-xs text-gray-500">
-                      경유지 수: {route?.waypoints?.length ?? 0}
-                      {route?.polyline?.length
-                        ? ` · 경로 좌표 ${route.polyline.length}점`
-                        : " · 경로 없음"}
+                return (
+                  <div
+                    key={card.key}
+                    className={`flex-1 rounded-lg border-2 p-4 shadow transition ${card.cardClass} ${
+                      isSelected ? "ring-2 ring-offset-1 ring-gray-500" : ""
+                    }`}
+                  >
+                    <div className="mb-2 flex items-center gap-2">
+                      <Icon size={18} />
+                      <h2 className="text-base font-semibold">{card.title}</h2>
+                    </div>
+
+                    <p className="mb-1 text-sm text-gray-700">
+                      {card.key === "custom"
+                        ? "직접 그린 나만의 경로"
+                        : (route?.description ?? "설명 없음")}
                     </p>
-                  )}
 
-                  <div className="flex flex-wrap gap-2">
-                    {card.key === "custom" ? (
-                      <button
-                        onClick={() => navigate("/custom")}
-                        className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
-                      >
-                        경로 그리기
-                      </button>
-                    ) : (
-                      <>
+                    {card.key !== "custom" && (
+                      <p className="mb-3 text-xs text-gray-500">
+                        경유지 수: {route?.waypoints?.length ?? 0}
+                        {route?.polyline?.length
+                          ? ` · 경로 좌표 ${route.polyline.length}점`
+                          : " · 경로 없음"}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      {card.key === "custom" ? (
                         <button
-                          onClick={() => handleSelectRoute(card.key)}
+                          onClick={() => navigate("/custom")}
                           className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
                         >
-                          {isSelected ? "✓ 선택됨" : "이 경로 선택"}
+                          경로 그리기
                         </button>
-                        <button
-                          onClick={openKakaoNavi}
-                          className="rounded bg-yellow-300 px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-yellow-400 transition"
-                        >
-                          카카오 내비
-                        </button>
-                      </>
-                    )}
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleSelectRoute(card.key)}
+                            className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
+                          >
+                            {isSelected ? "✓ 선택됨" : "이 경로 선택"}
+                          </button>
+                          <button
+                            onClick={openKakaoNavi}
+                            className="rounded bg-yellow-300 px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-yellow-400 transition"
+                          >
+                            카카오 내비
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
