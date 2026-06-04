@@ -24,8 +24,8 @@ async def recommend_route(start_lat: float, start_lng: float, end_lat: float, en
     # 4. 상황 태그 판단
     context_tags = get_context_tags(weather_data, uv_index, current_time, sunset, sunrise)
 
-    # 5. 상황별 경로 생성
-    routes = build_routes(context_tags)
+    # 5. 상황별 경로 생성 (카카오 모빌리티 API 실연동)
+    routes = await build_routes(context_tags, start_lat, start_lng, end_lat, end_lng)
 
     # 6. 추천 문자열 결정
     if "비" in context_tags or "자외선_매우높음" in context_tags:
