@@ -24,7 +24,6 @@ MOCK_ROUTES = [
 
 def test_route_recommend_success():
     with patch("app.routers.route.get_weather", new=AsyncMock(return_value=MOCK_WEATHER_CLEAR)), \
-         patch("app.routers.route.get_uv_index", new=AsyncMock(return_value=3)), \
          patch("app.routers.route.build_routes", return_value=MOCK_ROUTES):
         response = client.get(
             "/api/route/recommend?start_lat=36.35&start_lng=127.38&end_lat=36.36&end_lng=127.39"
@@ -107,7 +106,6 @@ def test_build_routes_night():
 
 def test_route_recommend_rain_recommendation():
     with patch("app.routers.route.get_weather", new=AsyncMock(return_value=MOCK_WEATHER_CLEAR)), \
-         patch("app.routers.route.get_uv_index", new=AsyncMock(return_value=3)), \
          patch("app.routers.route.get_context_tags", return_value=["비"]):
         response = client.get(
             "/api/route/recommend?start_lat=36.35&start_lng=127.38&end_lat=36.36&end_lng=127.39"
@@ -117,7 +115,6 @@ def test_route_recommend_rain_recommendation():
 
 def test_route_recommend_snow_recommendation():
     with patch("app.routers.route.get_weather", new=AsyncMock(return_value=MOCK_WEATHER_CLEAR)), \
-         patch("app.routers.route.get_uv_index", new=AsyncMock(return_value=3)), \
          patch("app.routers.route.get_context_tags", return_value=["눈"]):
         response = client.get(
             "/api/route/recommend?start_lat=36.35&start_lng=127.38&end_lat=36.36&end_lng=127.39"
@@ -127,7 +124,6 @@ def test_route_recommend_snow_recommendation():
 
 def test_route_recommend_night_recommendation():
     with patch("app.routers.route.get_weather", new=AsyncMock(return_value=MOCK_WEATHER_CLEAR)), \
-         patch("app.routers.route.get_uv_index", new=AsyncMock(return_value=3)), \
          patch("app.routers.route.get_context_tags", return_value=["야간"]):
         response = client.get(
             "/api/route/recommend?start_lat=36.35&start_lng=127.38&end_lat=36.36&end_lng=127.39"
@@ -137,7 +133,6 @@ def test_route_recommend_night_recommendation():
 
 def test_route_recommend_high_uv_recommendation():
     with patch("app.routers.route.get_weather", new=AsyncMock(return_value=MOCK_WEATHER_CLEAR)), \
-         patch("app.routers.route.get_uv_index", new=AsyncMock(return_value=3)), \
          patch("app.routers.route.get_context_tags", return_value=["자외선_높음"]):
         response = client.get(
             "/api/route/recommend?start_lat=36.35&start_lng=127.38&end_lat=36.36&end_lng=127.39"
@@ -147,7 +142,6 @@ def test_route_recommend_high_uv_recommendation():
 
 def test_route_recommend_normal_recommendation():
     with patch("app.routers.route.get_weather", new=AsyncMock(return_value=MOCK_WEATHER_CLEAR)), \
-         patch("app.routers.route.get_uv_index", new=AsyncMock(return_value=3)), \
          patch("app.routers.route.get_context_tags", return_value=["주간"]):
         response = client.get(
             "/api/route/recommend?start_lat=36.35&start_lng=127.38&end_lat=36.36&end_lng=127.39"

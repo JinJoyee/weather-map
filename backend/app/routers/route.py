@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from datetime import datetime
-from app.services.weather_service import get_weather, get_uv_index, calculate_sunrise_sunset
+from app.services.weather_service import get_weather, calculate_sunrise_sunset
 from app.services.context_engine import get_context_tags
 from app.services.route_engine import build_routes
 
@@ -11,9 +11,8 @@ async def recommend_route(start_lat: float, start_lng: float, end_lat: float, en
     # 1. 날씨 데이터 가져오기
     weather_data = await get_weather(start_lat, start_lng)
     
-    # 2. 자외선 지수 실제 API로 가져오기
-    uv_index = await get_uv_index(start_lat, start_lng)
-    weather_data["uv_index"] = uv_index  # 날씨 데이터에 반영
+    # 2. 자외선 지수 (get_weather 내부에서 이미 호출됨)
+    uv_index = weather_data["uv_index"]
 
     # 3. 현재 시각 + 일출/일몰 (고정값)
     current_time = datetime.now().hour

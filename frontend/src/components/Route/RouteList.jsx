@@ -115,7 +115,6 @@ export default function RouteList() {
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
                   경유지 {Array.isArray(route.waypoints) ? route.waypoints.length : 0}개
-                  {route.waypoints?.length > 0 && ` · ${route.waypoints.length}개 경유`}
                 </p>
                 <p className="text-xs text-gray-400">
                   저장일: {route.created_at ? new Date(route.created_at).toLocaleDateString('ko-KR') : '-'}
