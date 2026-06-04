@@ -24,10 +24,10 @@ export const fetchRouteRecommend = async (
 ) => {
   const { data } = await api.get("/api/route/recommend", {
     params: {
-      startLat,
-      startLng,
-      endLat,
-      endLng,
+      start_lat: startLat,
+      start_lng: startLng,
+      end_lat: endLat,
+      end_lng: endLng,
     },
   });
 

@@ -1,4 +1,6 @@
-# 상황 태그별 waypoint 매핑 (대전 실제 좌표 기준)
+import httpx
+from app.config import KAKAO_REST_API_KEY
+
 CONTEXT_WAYPOINTS = {
     "비": [
         {"lat": 36.3519, "lng": 127.3782, "label": "갤러리아 타임월드", "type": "shelter"},
@@ -28,7 +30,6 @@ CONTEXT_WAYPOINTS = {
 
 
 def get_waypoints_for_tags(context_tags: list) -> list:
-    """상황 태그 기반으로 waypoint 목록 반환"""
     waypoints = []
     for tag in context_tags:
         if tag in CONTEXT_WAYPOINTS:
@@ -36,29 +37,81 @@ def get_waypoints_for_tags(context_tags: list) -> list:
     return waypoints
 
 
-def build_routes(context_tags: list) -> dict:
+async def fetch_kakao_route(
+    start_lat: float, start_lng: float,
+    end_lat: float, end_lng: float,
+    waypoints: list = None,
+    priority: str = "RECOMMEND"
+) -> list:
+    url = "https://apis-navi.kakaomobility.com/v1/directions"
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
+    params = {
+        "origin": f"{start_lng},{start_lat}",
+        "destination": f"{end_lng},{end_lat}",
+        "priority": priority,
+    }
+    if waypoints:
+        # Kakao Mobility는 경유지 최대 3개, lng,lat 순서
+        wps = waypoints[:1]
+        params["waypoints"] = "|".join([f"{wp['lng']},{wp['lat']}" for wp in wps])
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers, params=params)
+            data = resp.json()
+
+        routes = data.get("routes", [])
+        if not routes or routes[0].get("result_code") != 0:
+            return []
+
+        # vertexes는 [lng, lat, lng, lat, ...] 순서
+        polyline = []
+        for section in routes[0]["sections"]:
+            for road in section["roads"]:
+                vx = road["vertexes"]
+                for i in range(0, len(vx) - 1, 2):
+                    polyline.append({"lat": vx[i + 1], "lng": vx[i]})
+        return polyline
+    except Exception:
+        return []
+
+
+async def build_routes(
+    context_tags: list,
+    start_lat: float, start_lng: float,
+    end_lat: float, end_lng: float,
+) -> dict:
     waypoints = get_waypoints_for_tags(context_tags)
 
-    route_option = "normal"
-    if "야간" in context_tags:
-        route_option = "bigroad"
+    # 최단경로: 시간 최적화
+    normal_polyline = await fetch_kakao_route(
+        start_lat, start_lng, end_lat, end_lng, priority="TIME"
+    )
 
-    normal_route = {
-        "type": "normal",
-        "description": "기본 최단 경로",
-        "waypoints": [],
-        "route_option": "normal"
-    }
+    # 상황 인식 경로: 그늘/공원 경유지 포함
+    uv_waypoints = [wp for wp in waypoints if wp.get("type") in ("shade", "park", "shelter")]
+    context_polyline = await fetch_kakao_route(
+        start_lat, start_lng, end_lat, end_lng,
+        waypoints=uv_waypoints[:1] if uv_waypoints else None,
+        priority="RECOMMEND",
+    )
 
-    context_route = {
-        "type": "context",
-        "description": "상황 인식 경로",
-        "waypoints": waypoints,
-        "route_option": route_option,
-        "context_tags": context_tags
-    }
+    route_option = "bigroad" if "야간" in context_tags else "normal"
 
     return {
-        "normal": normal_route,
-        "context": context_route
+        "normal": {
+            "type": "normal",
+            "description": "기본 최단 경로",
+            "waypoints": [],
+            "route_option": "normal",
+            "polyline": normal_polyline,
+        },
+        "context": {
+            "type": "context",
+            "description": "상황 인식 경로",
+            "waypoints": waypoints,
+            "route_option": route_option,
+            "context_tags": context_tags,
+            "polyline": context_polyline,
+        },
     }
