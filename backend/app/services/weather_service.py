@@ -41,7 +41,9 @@ def latlon_to_grid(lat, lon):
 
 # Step 2 — 기상청 API 호출 및 파싱
 async def get_weather(lat: float, lng: float):
-    from datetime import datetime
+    from datetime import datetime, timezone, timedelta
+
+    KST = timezone(timedelta(hours=9))
 
     nx, ny = latlon_to_grid(lat, lng)
 
@@ -115,6 +117,12 @@ async def get_weather(lat: float, lng: float):
                 result["temperature"] = float(value)
             except ValueError:
                 pass
+
+    sunrise_hour, sunset_hour = calculate_sunrise_sunset(lat, lng)
+    today_kst = datetime.now(KST)
+    date_str = today_kst.strftime("%Y-%m-%d")
+    result["sunrise"] = f"{date_str}T{sunrise_hour:02d}:00:00+09:00"
+    result["sunset"] = f"{date_str}T{sunset_hour:02d}:00:00+09:00"
 
     return result
 
