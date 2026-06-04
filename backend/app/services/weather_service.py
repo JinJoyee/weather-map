@@ -91,6 +91,7 @@ async def get_weather(lat: float, lng: float):
         "lng": lng,
         "nx": nx,
         "ny": ny,
+        "temperature": None,
         "rain_probability": 0,
         "snow_probability": 0,
         "uv_index": uv_value,
@@ -109,6 +110,11 @@ async def get_weather(lat: float, lng: float):
         elif category == "SKY":  # 하늘상태
             sky_map = {"1": "맑음", "3": "구름많음", "4": "흐림"}
             result["weather"] = sky_map.get(value, "맑음")
+        elif category == "TMP":  # 기온
+            try:
+                result["temperature"] = float(value)
+            except ValueError:
+                pass
 
     return result
 
