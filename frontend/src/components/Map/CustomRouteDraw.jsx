@@ -84,7 +84,7 @@ export default function CustomRouteDraw({ onSaved }) {
     setError('');
     try {
       const waypoints = points.slice(1, -1);
-      await api.post('/api/routes/custom', {
+      const { data } = await api.post('/api/routes/custom', {
         name: form.name,
         start_lat: points[0].lat,
         start_lng: points[0].lng,
