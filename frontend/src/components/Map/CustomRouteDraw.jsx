@@ -46,10 +46,17 @@ export default function CustomRouteDraw({ onSaved }) {
 
     const listener = kakao.maps.event.addListener(map, 'click', (e) => {
       const latlng = e.latLng;
-      const marker = new kakao.maps.Marker({ position: latlng });
-      marker.setMap(map);
-      markersRef.current.push(marker);
-      setPoints((prev) => [...prev, { lat: latlng.getLat(), lng: latlng.getLng() }]);
+      setPoints((prev) => {
+        const next = [...prev, { lat: latlng.getLat(), lng: latlng.getLng() }];
+        const label = next.length === 1 ? '출발' : `${next.length}`;
+        const marker = new kakao.maps.Marker({
+          position: latlng,
+          title: label,
+        });
+        marker.setMap(map);
+        markersRef.current.push(marker);
+        return next;
+      });
     });
 
     return () => kakao.maps.event.removeListener(map, 'click', listener);
