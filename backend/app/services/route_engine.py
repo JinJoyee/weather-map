@@ -236,8 +236,9 @@ async def build_routes(
                 start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
             )
     else:
+        # 경유지 없음 → TIME 우선순위로 normal(RECOMMEND)과 항상 다른 경로 확보
         context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
-            start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
+            start_lat, start_lng, end_lat, end_lng, priority="TIME",
         )
     if not context_polyline:
         context_polyline = normal_polyline
