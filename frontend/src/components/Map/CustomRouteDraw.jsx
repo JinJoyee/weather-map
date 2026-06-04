@@ -71,10 +71,11 @@ export default function CustomRouteDraw({ onSaved }) {
     const path = points.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
     polylineRef.current = new kakao.maps.Polyline({
       path,
-      strokeWeight: 4,
-      strokeColor: '#0057FF',
-      strokeOpacity: 0.8,
+      strokeWeight: 5,
+      strokeColor: '#FF6B35',
+      strokeOpacity: 0.9,
       strokeStyle: 'solid',
+      endArrow: true,
     });
     polylineRef.current.setMap(map);
   }, [points]);
