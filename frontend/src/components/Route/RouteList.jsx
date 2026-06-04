@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { getToken } from '../../api/auth';
 import { resolveApiError } from '../../utils/apiErrorHandler';
-import CustomRouteDraw from '../Map/CustomRouteDraw';
 
 export default function RouteList() {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showDraw, setShowDraw] = useState(false);
 
   const fetchRoutes = async () => {
     setLoading(true);
@@ -85,33 +83,13 @@ export default function RouteList() {
     <div className="min-h-screen bg-neutral px-6 py-10 max-w-2xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-secondary">내 커스텀 경로</h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowDraw(true)}
-            className="bg-primary text-white px-4 py-1.5 rounded-full text-sm font-bold hover:scale-105 transition-all"
-          >
-            + 새 경로 등록
-          </button>
-          <button
-            onClick={fetchRoutes}
-            className="text-sm text-primary font-medium hover:opacity-70 transition-all"
-          >
-            새로고침
-          </button>
-        </div>
+        <button
+          onClick={fetchRoutes}
+          className="text-sm text-primary font-medium hover:opacity-70 transition-all"
+        >
+          새로고침
+        </button>
       </div>
-
-      {showDraw && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex flex-col">
-          <div className="bg-white px-4 py-3 flex justify-between items-center shadow">
-            <span className="font-bold text-secondary">경로 그리기</span>
-            <button onClick={() => setShowDraw(false)} className="text-gray-500 hover:text-gray-800">닫기</button>
-          </div>
-          <div className="flex-1">
-            <CustomRouteDraw onSaved={() => { setShowDraw(false); fetchRoutes(); }} />
-          </div>
-        </div>
-      )}
 
       {routes.length === 0 ? (
         <div className="glass-panel p-8 text-center">
