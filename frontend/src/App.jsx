@@ -5,8 +5,6 @@ import MapView from './components/Map/MapView';
 import RouteCompare from './components/Route/RouteCompare';
 import RouteList from './components/Route/RouteList';
 import NavBar from './components/common/NavBar';
-import LoginPage from './components/Auth/LoginPage';
-import SignupPage from './components/Auth/SignupPage';
 
 function App() {
   const [backendStatus, setBackendStatus] = useState('checking');
@@ -77,8 +75,6 @@ function App() {
       <Route path="/map" element={<MapView />} />
       <Route path="/routes" element={<RouteCompare />} />
       <Route path="/custom" element={<RouteList />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
       <Route
         path="*"
         element={
