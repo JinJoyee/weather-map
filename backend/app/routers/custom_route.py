@@ -99,11 +99,12 @@ def delete_custom_route(
 @router.get("/shared/list")
 def get_shared_routes(
     context_tag: Optional[str] = Query(None),
-    limit: int = Query(20),
+    limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
     query = db.query(CustomRoute).filter(CustomRoute.is_public == True)
     if context_tag:
         query = query.filter(CustomRoute.context_tag == context_tag)
+    total = query.count()
     routes = query.limit(limit).all()
-    return {"total": len(routes), "routes": routes}
+    return {"total": total, "routes": routes}
