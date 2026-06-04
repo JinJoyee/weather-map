@@ -5,11 +5,12 @@ client = TestClient(app)
 
 
 def test_login_success():
+    client.post("/api/auth/signup", json={"username": "admin", "password": "1234"})
     response = client.post("/api/auth/login", json={"username": "admin", "password": "1234"})
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
-    assert "token" in data
+    assert "access_token" in data
 
 
 def test_login_wrong_password():

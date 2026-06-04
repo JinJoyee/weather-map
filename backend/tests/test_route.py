@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 from app.main import app
@@ -89,14 +90,16 @@ def test_get_waypoints_for_unknown_tag():
 
 
 def test_build_routes_normal():
-    result = build_routes(["주간"])
+    with patch("app.services.route_engine.fetch_kakao_route", new=AsyncMock(return_value=[])):
+        result = asyncio.run(build_routes(["주간"], 36.35, 127.38, 36.36, 127.39))
     assert "normal" in result
     assert "context" in result
     assert result["context"]["route_option"] == "normal"
 
 
 def test_build_routes_night():
-    result = build_routes(["야간"])
+    with patch("app.services.route_engine.fetch_kakao_route", new=AsyncMock(return_value=[])):
+        result = asyncio.run(build_routes(["야간"], 36.35, 127.38, 36.36, 127.39))
     assert result["context"]["route_option"] == "bigroad"
 
 
