@@ -5,13 +5,16 @@ import { fetchRouteRecommend } from "../../api/route";
 
 function calcTravelTime(route, mode) {
   if (!route) return null;
-  if (mode === "walk") return route.distance != null ? Math.ceil(route.distance / 67)  : null;
-  if (mode === "bike") return route.distance != null ? Math.ceil(route.distance / 250) : null;
-  if (mode === "car")  return route.duration  != null ? Math.ceil(route.duration  / 60) : null;
+  // 도보/자전거는 고속화도로 없는 RECOMMEND 거리 기준으로 계산
+  const footDist = route.foot_distance ?? route.distance;
+  if (mode === "walk") return footDist != null ? Math.ceil(footDist / 67)  : null;
+  if (mode === "bike") return footDist != null ? Math.ceil(footDist / 250) : null;
+  if (mode === "car")  return route.duration != null ? Math.ceil(route.duration / 60) : null;
   return null;
 }
 
-function formatDistance(m) {
+function formatDistance(route, mode) {
+  const m = (mode === "car" ? route?.distance : route?.foot_distance) ?? route?.distance;
   if (m == null) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`;
 }
@@ -368,9 +371,9 @@ export default function RouteCompare() {
                                 ? `약 ${calcTravelTime(route, transportMode)}분`
                                 : "정보 없음"
                               : "—"}
-                            {route?.distance != null && (
+                            {formatDistance(route, transportMode) && (
                               <span className="ml-2 text-xs font-normal text-gray-400">
-                                · {formatDistance(route.distance)}
+                                · {formatDistance(route, transportMode)}
                               </span>
                             )}
                           </div>

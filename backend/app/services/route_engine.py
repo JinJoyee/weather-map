@@ -222,9 +222,14 @@ async def build_routes(
         context_tags, start_lat, start_lng, end_lat, end_lng, scores
     )
 
-    # 최단 경로 (시간 기준 — RECOMMEND와 다른 경로를 보장)
+    # 최단 경로 (자동차 시간 기준)
     normal_polyline, normal_duration, normal_distance = await _fetch_kakao_route_full(
         start_lat, start_lng, end_lat, end_lng, priority="TIME"
+    )
+
+    # 도보/자전거용 거리: RECOMMEND 경로(고속화도로 제외)로 별도 계산
+    _, _, normal_foot_distance = await _fetch_kakao_route_full(
+        start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND"
     )
 
     # 날씨 최적 경로: 경유지 포함 시도 → 실패 시 경유지 없이 재시도 → 최종 폴백 normal 재활용
@@ -273,6 +278,7 @@ async def build_routes(
             "polyline": normal_polyline,
             "duration": normal_duration,
             "distance": normal_distance,
+            "foot_distance": normal_foot_distance,  # 도보/자전거 소요 시간 계산용
         },
         "context": {
             "type": "context",
@@ -283,5 +289,6 @@ async def build_routes(
             "polyline": context_polyline,
             "duration": context_duration,
             "distance": context_distance,
+            "foot_distance": context_distance,  # RECOMMEND 계열이라 그대로 사용
         },
     }
