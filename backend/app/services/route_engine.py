@@ -1,18 +1,18 @@
-# 상황 태그별 waypoint 매핑 (실제 데이터는 추후 DB에서 가져올 것)
+# 상황 태그별 waypoint 매핑 (대전 지역 기준)
 CONTEXT_WAYPOINTS = {
     "비": [
-        {"lat": 36.6424, "lng": 127.4890, "label": "청주 지하상가 입구", "type": "shelter"},
-        {"lat": 36.6389, "lng": 127.4866, "label": "롯데백화점 연결통로", "type": "shelter"},
+        {"lat": 36.3504, "lng": 127.3845, "label": "대전 지하상가 입구", "type": "shelter"},
+        {"lat": 36.3549, "lng": 127.3788, "label": "갤러리아 타임월드 연결통로", "type": "shelter"},
     ],
     "눈": [
-        {"lat": 36.6424, "lng": 127.4890, "label": "청주 지하상가 입구", "type": "shelter"},
+        {"lat": 36.3504, "lng": 127.3845, "label": "대전 지하상가 입구", "type": "shelter"},
     ],
     "자외선_높음": [
-        {"lat": 36.6412, "lng": 127.4897, "label": "가로수길 그늘 구간", "type": "shade"},
+        {"lat": 36.3517, "lng": 127.3845, "label": "은행동 가로수길 그늘 구간", "type": "shade"},
     ],
     "자외선_매우높음": [
-        {"lat": 36.6424, "lng": 127.4890, "label": "청주 지하상가 입구", "type": "shelter"},
-        {"lat": 36.6412, "lng": 127.4897, "label": "실내 연결통로", "type": "shelter"},
+        {"lat": 36.3504, "lng": 127.3845, "label": "대전 지하상가 입구", "type": "shelter"},
+        {"lat": 36.3549, "lng": 127.3788, "label": "실내 연결통로", "type": "shelter"},
     ],
 }
 
@@ -27,13 +27,8 @@ def get_waypoints_for_tags(context_tags: list) -> list:
 
 
 def build_routes(context_tags: list) -> dict:
-    """
-    상황 태그 기반으로 일반 경로 vs 상황 인식 경로 반환
-    실제 Kakao API 연동 전까지는 구조만 반환
-    """
     waypoints = get_waypoints_for_tags(context_tags)
 
-    # 야간이면 큰 도로 우선 옵션 설정
     route_option = "normal"
     if "야간" in context_tags:
         route_option = "bigroad"

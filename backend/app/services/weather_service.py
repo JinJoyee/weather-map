@@ -41,7 +41,9 @@ def latlon_to_grid(lat, lon):
 
 # Step 2 — 기상청 API 호출 및 파싱
 async def get_weather(lat: float, lng: float):
-    from datetime import datetime
+    from datetime import datetime, timezone, timedelta
+
+    KST = timezone(timedelta(hours=9))
 
     nx, ny = latlon_to_grid(lat, lng)
 
@@ -66,6 +68,8 @@ async def get_weather(lat: float, lng: float):
         "ny": ny,
     }
 
+    uv_value = await get_uv_index(lat, lng)
+
     async with httpx.AsyncClient() as client:
         response = await client.get(url, params=params, timeout=10)
         
@@ -80,18 +84,17 @@ async def get_weather(lat: float, lng: float):
                 "ny": ny,
                 "rain_probability": 0,
                 "snow_probability": 0,
-                "uv_index": 3,
+                "uv_index": uv_value,
                 "weather": "맑음 (목업)"
             }
 
     result = {
         "lat": lat,
         "lng": lng,
-        "nx": nx,
-        "ny": ny,
+        "temperature": None,
         "rain_probability": 0,
         "snow_probability": 0,
-        "uv_index": 3,
+        "uv_index": uv_value,
         "weather": "맑음"
     }
 
@@ -107,6 +110,18 @@ async def get_weather(lat: float, lng: float):
         elif category == "SKY":  # 하늘상태
             sky_map = {"1": "맑음", "3": "구름많음", "4": "흐림"}
             result["weather"] = sky_map.get(value, "맑음")
+        elif category == "TMP":  # 기온
+            try:
+                result["temperature"] = float(value)
+            except ValueError:
+                pass
+
+    sunrise_hour, sunset_hour = calculate_sunrise_sunset(lat, lng)
+    today_kst = datetime.now(KST)
+    date_str = today_kst.strftime("%Y-%m-%d")
+    result["sunrise"] = f"{date_str}T{sunrise_hour:02d}:00:00+09:00"
+    result["sunset"] = f"{date_str}T{sunset_hour:02d}:00:00+09:00"
+    result["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     return result
 
@@ -116,7 +131,7 @@ async def get_uv_index(lat: float, lng: float):
 
     now = datetime.now()
     time = now.strftime("%y%m%d") + f"{(now.hour // 3) * 3:02d}"
-    area_no = "4311100000"  # 청주시
+    area_no = "3000000000"  # 청주시
 
     url = "http://apis.data.go.kr/1360000/LivingWthrIdxServiceV4/getUVIdxV4"
     params = {
@@ -137,3 +152,55 @@ async def get_uv_index(lat: float, lng: float):
             return uv_value
     except Exception:
         return 3  # fallback 기본값
+
+def calculate_sunrise_sunset(lat: float, lng: float):
+    from datetime import datetime, timedelta
+    import math
+
+    today = datetime.now()
+    day_of_year = today.timetuple().tm_yday
+
+    # 일출/일몰 계산 (간이 공식)
+    lng_hour = lng / 15
+    
+    # 일출
+    t_rise = day_of_year + ((6 - lng_hour) / 24)
+    m_rise = (0.9856 * t_rise) - 3.289
+    l_rise = m_rise + (1.916 * math.sin(math.radians(m_rise))) + (0.020 * math.sin(math.radians(2 * m_rise))) + 282.634
+    l_rise = l_rise % 360
+    ra_rise = math.degrees(math.atan(0.91764 * math.tan(math.radians(l_rise))))
+    ra_rise = ra_rise % 360
+    l_quad = (l_rise // 90) * 90
+    ra_quad = (ra_rise // 90) * 90
+    ra_rise = ra_rise + (l_quad - ra_quad)
+    ra_rise = ra_rise / 15
+    sin_dec = 0.39782 * math.sin(math.radians(l_rise))
+    cos_dec = math.cos(math.asin(sin_dec))
+    cos_h = (math.cos(math.radians(90.833)) - (sin_dec * math.sin(math.radians(lat)))) / (cos_dec * math.cos(math.radians(lat)))
+    h_rise = 360 - math.degrees(math.acos(cos_h))
+    h_rise = h_rise / 15
+    t_rise = h_rise + ra_rise - (0.06571 * t_rise) - 6.622
+    ut_rise = (t_rise - lng_hour) % 24
+    sunrise_hour = int((ut_rise + 9) % 24)  # KST (UTC+9)
+
+    # 일몰
+    t_set = day_of_year + ((18 - lng_hour) / 24)
+    m_set = (0.9856 * t_set) - 3.289
+    l_set = m_set + (1.916 * math.sin(math.radians(m_set))) + (0.020 * math.sin(math.radians(2 * m_set))) + 282.634
+    l_set = l_set % 360
+    ra_set = math.degrees(math.atan(0.91764 * math.tan(math.radians(l_set))))
+    ra_set = ra_set % 360
+    l_quad = (l_set // 90) * 90
+    ra_quad = (ra_set // 90) * 90
+    ra_set = ra_set + (l_quad - ra_quad)
+    ra_set = ra_set / 15
+    sin_dec = 0.39782 * math.sin(math.radians(l_set))
+    cos_dec = math.cos(math.asin(sin_dec))
+    cos_h = (math.cos(math.radians(90.833)) - (sin_dec * math.sin(math.radians(lat)))) / (cos_dec * math.cos(math.radians(lat)))
+    h_set = math.degrees(math.acos(cos_h))
+    h_set = h_set / 15
+    t_set = h_set + ra_set - (0.06571 * t_set) - 6.622
+    ut_set = (t_set - lng_hour) % 24
+    sunset_hour = int((ut_set + 9) % 24)  # KST (UTC+9)
+
+    return sunrise_hour, sunset_hour

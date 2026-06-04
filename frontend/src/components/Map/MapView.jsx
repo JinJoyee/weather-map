@@ -1,23 +1,57 @@
-import { useNavigate } from 'react-router-dom';
+import { useRef, useEffect, useState } from 'react';
+import { fetchCurrentWeather } from '../../api/weather';
+import WeatherIcon from '../common/WeatherIcon';
+
+const DAEJEON_LAT = 36.3504;
+const DAEJEON_LNG = 127.3845;
 
 export default function MapView() {
-  const navigate = useNavigate();
+  const mapRef = useRef(null);
+  const [weather, setWeather] = useState(null);
+
+  useEffect(() => {
+    fetchCurrentWeather(DAEJEON_LAT, DAEJEON_LNG)
+      .then(setWeather)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const { kakao } = window;
+    if (!kakao || !mapRef.current) return;
+
+    const center = new kakao.maps.LatLng(DAEJEON_LAT, DAEJEON_LNG);
+    const map = new kakao.maps.Map(mapRef.current, { center, level: 5 });
+
+    const marker = new kakao.maps.Marker({ position: center });
+    marker.setMap(map);
+
+    const infoWindow = new kakao.maps.InfoWindow({
+      content: '<div style="padding:6px 10px;font-size:13px;">대전 중심부</div>',
+    });
+
+    kakao.maps.event.addListener(marker, 'click', () => {
+      infoWindow.open(map, marker);
+    });
+  }, []);
 
   return (
-    <div className="min-h-screen bg-neutral flex flex-col items-center justify-center p-6">
-      <div className="glass-panel p-8 max-w-md w-full text-center">
-        <h2 className="text-3xl font-bold text-secondary mb-4">탐색 화면</h2>
-        <p className="text-gray-600 mb-8">
-          여기에 실시간 날씨 지도와 경로 데이터가 표시될 예정입니다.
-        </p>
-        
-        <button 
-          onClick={() => navigate(-1)}
-          className="w-full py-3 px-6 rounded-lvl2 border border-primary text-primary font-bold hover:bg-primary/5 transition-all"
-        >
-          이전으로 돌아가기
-        </button>
-      </div>
+    <div className="relative w-full h-screen">
+      <div ref={mapRef} className="w-full h-full" />
+
+      {weather && (
+        <div className="absolute top-4 left-4 glass-panel px-4 py-3 flex items-center gap-3 z-10">
+          <WeatherIcon
+            weather={weather.weather}
+            rainProbability={weather.rain_probability}
+            snowProbability={weather.snow_probability}
+            size="text-2xl"
+          />
+          <div className="text-sm">
+            <p className="font-bold text-secondary">{weather.weather}</p>
+            <p className="text-gray-500">UV {weather.uv_index} · 강수 {weather.rain_probability}%</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
