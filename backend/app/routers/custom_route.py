@@ -45,3 +45,15 @@ def create_custom_route(
     db.commit()
     db.refresh(route)
     return route
+
+
+@router.get("")
+def get_custom_routes(
+    username: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="사용자를 찾을 수 없습니다")
+    routes = db.query(CustomRoute).filter(CustomRoute.user_id == user.id).all()
+    return {"total": len(routes), "routes": routes}
