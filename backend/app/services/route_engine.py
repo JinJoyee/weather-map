@@ -120,10 +120,12 @@ async def _get_context_waypoint(
             wp = await _search_place_near(mid_lat, mid_lng, "지하상가", radius)
         return [wp] if wp else []
 
-    # 주간(맑음) → 가로수길 경유 산책 경로 (두 경로가 항상 달라야 함)
+    # 주간(맑음) → 가로수길 경유 산책 경로, 실패 시 공원 입구 → 정적 공원 폴백
     if "주간" in tags:
         wp = await _search_place_near(mid_lat, mid_lng, "가로수길", radius)
-        return [wp] if wp else []
+        if not wp:
+            wp = await _search_place_near(mid_lat, mid_lng, "공원 입구", radius)
+        return [wp] if wp else CONTEXT_WAYPOINTS.get("주간", [])[:1]
 
     return []
 
@@ -220,9 +222,9 @@ async def build_routes(
         context_tags, start_lat, start_lng, end_lat, end_lng, scores
     )
 
-    # 최단 경로 (카카오 RECOMMEND — TIME은 고속화도로 우선이라 도시 내에서 거리가 역전됨)
+    # 최단 경로 (시간 기준 — RECOMMEND와 다른 경로를 보장)
     normal_polyline, normal_duration, normal_distance = await _fetch_kakao_route_full(
-        start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND"
+        start_lat, start_lng, end_lat, end_lng, priority="TIME"
     )
 
     # 날씨 최적 경로: 경유지 포함 시도 → 실패 시 경유지 없이 재시도 → 최종 폴백 normal 재활용
@@ -236,9 +238,8 @@ async def build_routes(
                 start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
             )
     else:
-        # 경유지 없음 → TIME 우선순위로 normal(RECOMMEND)과 항상 다른 경로 확보
         context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
-            start_lat, start_lng, end_lat, end_lng, priority="TIME",
+            start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
         )
     if not context_polyline:
         context_polyline = normal_polyline
@@ -266,7 +267,7 @@ async def build_routes(
     return {
         "normal": {
             "type": "normal",
-            "description": "추천 경로 (카카오 내비)",
+            "description": "자동차 최단 시간 경로 (카카오 내비)",
             "waypoints": [],
             "route_option": "normal",
             "polyline": normal_polyline,
