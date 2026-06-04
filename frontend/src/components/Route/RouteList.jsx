@@ -90,12 +90,22 @@ export default function RouteList() {
             <div key={route.id} className="glass-panel p-5 flex justify-between items-start">
               <div>
                 <h3 className="font-bold text-secondary text-lg">{route.name}</h3>
-                {route.context_tag && (
-                  <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full mt-1 inline-block">
-                    {route.context_tag}
-                  </span>
-                )}
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  {route.context_tag && (
+                    <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+                      {route.context_tag}
+                    </span>
+                  )}
+                  {route.is_public && (
+                    <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
+                      공개
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400 mt-2">
+                  경유지 {Array.isArray(route.waypoints) ? route.waypoints.length : 0}개
+                </p>
+                <p className="text-xs text-gray-400">
                   저장일: {route.created_at ? new Date(route.created_at).toLocaleDateString('ko-KR') : '-'}
                 </p>
               </div>
