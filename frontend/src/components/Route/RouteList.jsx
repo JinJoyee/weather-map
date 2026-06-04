@@ -36,7 +36,8 @@ export default function RouteList() {
     fetchRoutes();
   }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`"${name}" 경로를 삭제하시겠습니까?`)) return;
     try {
       await api.delete(`/api/routes/custom/${id}`);
       setRoutes((prev) => prev.filter((r) => r.id !== id));
@@ -110,7 +111,7 @@ export default function RouteList() {
                 </p>
               </div>
               <button
-                onClick={() => handleDelete(route.id)}
+                onClick={() => handleDelete(route.id, route.name)}
                 className="text-red-500 text-sm font-medium hover:opacity-70 transition-all"
               >
                 삭제
