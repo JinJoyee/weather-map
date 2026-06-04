@@ -77,15 +77,20 @@ async def get_weather(lat: float, lng: float):
             data = response.json()
             items = data["response"]["body"]["items"]["item"]
         except Exception:
+            today_kst = datetime.now(KST)
+            date_str = today_kst.strftime("%Y-%m-%d")
+            sr, ss = calculate_sunrise_sunset(lat, lng)
             return {
                 "lat": lat,
                 "lng": lng,
-                "nx": nx,
-                "ny": ny,
+                "temperature": None,
                 "rain_probability": 0,
                 "snow_probability": 0,
                 "uv_index": uv_value,
-                "weather": "맑음 (목업)"
+                "weather": "맑음 (목업)",
+                "sunrise": f"{date_str}T{sr:02d}:00:00+09:00",
+                "sunset": f"{date_str}T{ss:02d}:00:00+09:00",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
             }
 
     result = {
