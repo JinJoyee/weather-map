@@ -61,6 +61,23 @@ export default function CustomRouteDraw({ onSaved }) {
     return () => kakao.maps.event.removeListener(map, 'click', listener);
   }, [drawing]);
 
+  useEffect(() => {
+    const { kakao } = window;
+    const map = mapInstance.current;
+    if (!kakao || !map || points.length < 2) return;
+    if (polylineRef.current) polylineRef.current.setMap(null);
+    const path = points.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+    polylineRef.current = new kakao.maps.Polyline({
+      path,
+      strokeWeight: 5,
+      strokeColor: '#FF6B35',
+      strokeOpacity: 0.9,
+      strokeStyle: 'solid',
+      endArrow: true,
+    });
+    polylineRef.current.setMap(map);
+  }, [points]);
+
   return (
     <div className="relative w-full h-screen">
       <div ref={mapRef} className="w-full h-full" />
