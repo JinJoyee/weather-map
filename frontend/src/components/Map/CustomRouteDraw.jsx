@@ -78,6 +78,36 @@ export default function CustomRouteDraw({ onSaved }) {
     polylineRef.current.setMap(map);
   }, [points]);
 
+  const handleSave = async () => {
+    if (!form.name.trim()) { setError('경로 이름을 입력해주세요.'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      const waypoints = points.slice(1, -1);
+      await api.post('/api/routes/custom', {
+        name: form.name,
+        start_lat: points[0].lat,
+        start_lng: points[0].lng,
+        end_lat: points[points.length - 1].lat,
+        end_lng: points[points.length - 1].lng,
+        waypoints,
+        context_tag: form.context_tag || null,
+        is_public: form.is_public,
+      });
+      setShowModal(false);
+      setDrawing(false);
+      clearMap();
+      setPoints([]);
+      setForm({ name: '', context_tag: '', is_public: false });
+      alert(`"${form.name}" 경로가 저장되었습니다.`);
+      if (onSaved) onSaved();
+    } catch (err) {
+      setError(resolveApiError(err).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="relative w-full h-screen">
       <div ref={mapRef} className="w-full h-full" />
@@ -107,6 +137,63 @@ export default function CustomRouteDraw({ onSaved }) {
           </div>
         )}
       </div>
+
+      {drawing && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-xl px-4 py-2 shadow text-sm text-gray-600 z-10">
+          지도를 클릭해 경유지를 추가하세요. 첫 클릭=출발지, 마지막=도착지
+        </div>
+      )}
+
+      {showModal && (
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+          <div className="bg-white rounded-2xl p-6 w-80 shadow-xl">
+            <h2 className="text-lg font-bold text-secondary mb-1">경로 저장</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              출발지 1개 · 경유지 {points.length - 2}개 · 도착지 1개
+            </p>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                placeholder="경로 이름 *"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <input
+                type="text"
+                placeholder="태그 (예: 산책, 출근)"
+                value={form.context_tag}
+                onChange={(e) => setForm((f) => ({ ...f, context_tag: e.target.value }))}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={form.is_public}
+                  onChange={(e) => setForm((f) => ({ ...f, is_public: e.target.checked }))}
+                />
+                공개 경로로 저장
+              </label>
+              {error && <p className="text-red-500 text-xs">{error}</p>}
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 bg-primary text-white py-2 rounded-lg font-bold disabled:opacity-50"
+                >
+                  {saving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 border border-gray-300 py-2 rounded-lg text-gray-600"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
