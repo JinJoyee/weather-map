@@ -17,8 +17,8 @@ function formatDistance(m) {
 }
 
 const ROUTE_STYLES = {
-  normal:  { color: "#2563EB", label: "최단 경로" },
-  context: { color: "#16A34A", label: "날씨 최적 경로" },
+  normal:  { color: "#2563EB", label: "최단 경로",    strokeStyle: "solid" },
+  context: { color: "#16A34A", label: "날씨 최적 경로", strokeStyle: "shortdash" },
 };
 
 const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
@@ -113,43 +113,54 @@ export default function RouteCompare() {
     if (!routes || !mapInstance.current || !kakao) return;
 
     Object.values(polylinesRef.current).forEach(({ outer, inner }) => {
-      outer.setMap(null);
-      inner.setMap(null);
+      outer?.setMap(null);
+      inner?.setMap(null);
     });
     polylinesRef.current = {};
 
     const bounds = new kakao.maps.LatLngBounds();
     let hasPolyline = false;
 
-    Object.entries(ROUTE_STYLES).forEach(([key, style]) => {
+    // 경로별 path 먼저 계산
+    const pathMap = {};
+    Object.entries(ROUTE_STYLES).forEach(([key]) => {
       const polylineData = routes[key]?.polyline;
       if (!polylineData?.length) return;
-
       const path = polylineData.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
       path.forEach((p) => bounds.extend(p));
+      pathMap[key] = path;
       hasPolyline = true;
+    });
 
+    // 1단계: 외곽선(흰색) 전부 먼저 그리기
+    Object.entries(ROUTE_STYLES).forEach(([key]) => {
+      const path = pathMap[key];
+      if (!path) return;
       const outerPl = new kakao.maps.Polyline({
         path,
         strokeWeight: 10,
         strokeColor: "#FFFFFF",
-        strokeOpacity: 0.9,
+        strokeOpacity: 0.85,
         strokeStyle: "solid",
-        endArrow: true,
       });
       outerPl.setMap(mapInstance.current);
+      polylinesRef.current[key] = { outer: outerPl, inner: null };
+    });
 
+    // 2단계: 색상 선 전부 나중에 그리기 (항상 흰 외곽선 위에 위치)
+    Object.entries(ROUTE_STYLES).forEach(([key, style]) => {
+      const path = pathMap[key];
+      if (!path) return;
       const innerPl = new kakao.maps.Polyline({
         path,
         strokeWeight: 6,
         strokeColor: style.color,
-        strokeOpacity: 0.9,
-        strokeStyle: "solid",
+        strokeOpacity: 0.95,
+        strokeStyle: style.strokeStyle,
         endArrow: true,
       });
       innerPl.setMap(mapInstance.current);
-
-      polylinesRef.current[key] = { outer: outerPl, inner: innerPl };
+      polylinesRef.current[key].inner = innerPl;
     });
 
     if (hasPolyline) {
@@ -169,8 +180,8 @@ export default function RouteCompare() {
     pickStepRef.current = 0;
 
     Object.values(polylinesRef.current).forEach(({ outer, inner }) => {
-      outer.setMap(null);
-      inner.setMap(null);
+      outer?.setMap(null);
+      inner?.setMap(null);
     });
     polylinesRef.current = {};
 
@@ -190,11 +201,11 @@ export default function RouteCompare() {
     setSelectedRoute(key);
     Object.entries(polylinesRef.current).forEach(([k, { outer, inner }]) => {
       const isSelected = k === key;
-      outer.setOptions({
+      outer?.setOptions({
         strokeWeight: isSelected ? 16 : 10,
         strokeOpacity: isSelected ? 1.0 : 0.4,
       });
-      inner.setOptions({
+      inner?.setOptions({
         strokeWeight: isSelected ? 10 : 6,
         strokeOpacity: isSelected ? 1.0 : 0.3,
       });
