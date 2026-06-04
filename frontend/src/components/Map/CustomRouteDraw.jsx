@@ -39,6 +39,13 @@ export default function CustomRouteDraw({ onSaved }) {
     clearMap();
   };
 
+  const undoLastPoint = () => {
+    if (markersRef.current.length === 0) return;
+    const lastMarker = markersRef.current.pop();
+    lastMarker.setMap(null);
+    setPoints((prev) => prev.slice(0, -1));
+  };
+
   useEffect(() => {
     const { kakao } = window;
     const map = mapInstance.current;
@@ -127,6 +134,13 @@ export default function CustomRouteDraw({ onSaved }) {
               className="bg-primary text-white px-5 py-2 rounded-full font-bold shadow-lg hover:scale-105 transition-all disabled:opacity-40"
             >
               저장 ({points.length}개 지점)
+            </button>
+            <button
+              onClick={undoLastPoint}
+              disabled={points.length === 0}
+              className="bg-yellow-500 text-white px-4 py-2 rounded-full font-bold shadow-lg disabled:opacity-40"
+            >
+              되돌리기
             </button>
             <button
               onClick={() => { setDrawing(false); clearMap(); setPoints([]); }}
