@@ -8,10 +8,29 @@ const START_LNG = 127.3845;
 const END_LAT = 36.3623;
 const END_LNG = 127.3568;
 
-const ROUTE_STYLES = {
-  normal:  { color: "#3B82F6" },
-  context: { color: "#F59E0B" },
-};
+const CARDS = [
+  {
+    key: "normal",
+    title: "최단 경로",
+    icon: FaClock,
+    accentColor: "#2563EB",
+    iconClass: "bg-blue-100 text-primary",
+  },
+  {
+    key: "context",
+    title: "자외선 회피 경로",
+    icon: FaSun,
+    accentColor: "#F59E0B",
+    iconClass: "bg-amber-100 text-amber-600",
+  },
+  {
+    key: "custom",
+    title: "커스텀 경로",
+    icon: FaStar,
+    accentColor: "#10B981",
+    iconClass: "bg-emerald-100 text-emerald-600",
+  },
+];
 
 export default function RouteCompare() {
   const mapRef = useRef(null);
@@ -75,7 +94,8 @@ export default function RouteCompare() {
     Object.values(polylinesRef.current).forEach((pl) => pl.setMap(null));
     polylinesRef.current = {};
 
-    Object.entries(ROUTE_STYLES).forEach(([key, style]) => {
+    const colors = { normal: "#2563EB", context: "#F59E0B" };
+    Object.entries(colors).forEach(([key, color]) => {
       const polylineData = routes[key]?.polyline;
       if (!polylineData?.length) return;
 
@@ -83,7 +103,7 @@ export default function RouteCompare() {
       const polyline = new kakao.maps.Polyline({
         path,
         strokeWeight: 5,
-        strokeColor: style.color,
+        strokeColor: color,
         strokeOpacity: 0.8,
         strokeStyle: "solid",
       });
@@ -107,45 +127,48 @@ export default function RouteCompare() {
     window.open(url, "_blank");
   };
 
-  const cards = [
-    {
-      key: "normal",
-      title: "최단 경로",
-      icon: FaClock,
-      cardClass: "border-blue-400 bg-blue-50",
-      btnClass: "bg-blue-500 hover:bg-blue-600",
-    },
-    {
-      key: "context",
-      title: "자외선 회피 경로",
-      icon: FaSun,
-      cardClass: "border-yellow-400 bg-yellow-50",
-      btnClass: "bg-yellow-500 hover:bg-yellow-600",
-    },
-    {
-      key: "custom",
-      title: "커스텀 경로",
-      icon: FaStar,
-      cardClass: "border-green-400 bg-green-50",
-      btnClass: "bg-green-500 hover:bg-green-600",
-    },
-  ];
-
   return (
-    <div className="flex flex-col h-screen">
-      <div ref={mapRef} className="w-full" style={{ height: "45vh" }} />
+    <div className="flex flex-col h-screen bg-neutral">
+      {/* 지도 영역 */}
+      <div className="relative w-full shrink-0" style={{ height: "45vh" }}>
+        <div ref={mapRef} className="w-full h-full" />
+        <div className="absolute bottom-3 left-3 glass-panel px-3 py-2 text-xs flex gap-4 z-10">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-primary" />
+            출발: 대전 중심부
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500" />
+            도착: 목적지
+          </span>
+        </div>
+      </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
-        <h1 className="mb-2 text-xl font-bold">추천 경로 비교</h1>
+      {/* 카드 영역 */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <h1 className="mb-3 text-xl font-bold font-[Manrope] text-secondary">
+          추천 경로 비교
+        </h1>
 
         {isLoading ? (
-          <p className="text-gray-500">경로를 불러오는 중...</p>
+          <div className="flex items-center gap-2 text-secondary mt-8 justify-center">
+            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+            <span className="text-sm font-medium">경로를 불러오는 중...</span>
+          </div>
         ) : error ? (
-          <p className="text-red-500">{error}</p>
+          <div className="glass-panel p-4 flex items-center gap-3 text-red-600 mt-4">
+            <svg className="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm font-medium">{error}</span>
+          </div>
         ) : (
           <>
             {recommendation && (
-              <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700">
+              <div className="mb-3 rounded-lvl2 bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm text-indigo-700 font-medium">
                 {recommendation}
               </div>
             )}
@@ -153,7 +176,10 @@ export default function RouteCompare() {
             {contextTags.length > 0 && (
               <div className="mb-4 flex flex-wrap gap-2">
                 {contextTags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-gray-200 px-3 py-1 text-xs">
+                  <span
+                    key={tag}
+                    className="rounded-full bg-tertiary/20 text-secondary px-3 py-1 text-xs font-semibold"
+                  >
                     #{tag}
                   </span>
                 ))}
@@ -161,7 +187,7 @@ export default function RouteCompare() {
             )}
 
             <div className="flex flex-col gap-3 md:flex-row">
-              {cards.map((card) => {
+              {CARDS.map((card) => {
                 const Icon = card.icon;
                 const isSelected = selectedRoute === card.key;
                 const route = routes?.[card.key];
@@ -169,35 +195,46 @@ export default function RouteCompare() {
                 return (
                   <div
                     key={card.key}
-                    className={`flex-1 rounded-lg border-2 p-4 shadow transition ${card.cardClass} ${
-                      isSelected ? "ring-2 ring-offset-1 ring-gray-500" : ""
+                    className={`flex-1 glass-panel p-4 overflow-hidden transition-all duration-200 ${
+                      isSelected ? "ring-2 ring-primary ring-offset-1" : ""
                     }`}
                   >
-                    <div className="mb-2 flex items-center gap-2">
-                      <Icon size={18} />
-                      <h2 className="text-base font-semibold">{card.title}</h2>
+                    {/* 상단 accent 바 */}
+                    <div
+                      className="h-1 -mx-4 -mt-4 mb-4 rounded-t-lvl2"
+                      style={{ background: card.accentColor }}
+                    />
+
+                    <div className="mb-3 flex items-center gap-3">
+                      <span className={`rounded-full p-2 ${card.iconClass}`}>
+                        <Icon size={16} />
+                      </span>
+                      <h2 className="text-base font-bold font-[Manrope] text-secondary">
+                        {card.title}
+                      </h2>
                     </div>
 
-                    <p className="mb-1 text-sm text-gray-700">
+                    <p className="mb-1 text-sm text-gray-600">
                       {card.key === "custom"
                         ? "직접 그린 나만의 경로"
                         : (route?.description ?? "설명 없음")}
                     </p>
 
                     {card.key !== "custom" && (
-                      <p className="mb-3 text-xs text-gray-500">
-                        경유지 수: {route?.waypoints?.length ?? 0}
+                      <p className="mb-4 text-xs text-gray-400">
+                        경유지 {route?.waypoints?.length ?? 0}개
                         {route?.polyline?.length
-                          ? ` · 경로 좌표 ${route.polyline.length}점`
-                          : " · 경로 없음"}
+                          ? ` · ${route.polyline.length}개 좌표`
+                          : " · 경로 미수신"}
                       </p>
                     )}
+                    {card.key === "custom" && <div className="mb-4" />}
 
                     <div className="flex flex-wrap gap-2">
                       {card.key === "custom" ? (
                         <button
                           onClick={() => navigate("/custom")}
-                          className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
+                          className="bg-primary text-white text-sm font-semibold rounded-lvl2 px-4 py-2 hover:scale-[1.02] transition-all"
                         >
                           경로 그리기
                         </button>
@@ -205,13 +242,13 @@ export default function RouteCompare() {
                         <>
                           <button
                             onClick={() => handleSelectRoute(card.key)}
-                            className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
+                            className="bg-primary text-white text-sm font-semibold rounded-lvl2 px-4 py-2 hover:scale-[1.02] transition-all"
                           >
                             {isSelected ? "✓ 선택됨" : "이 경로 선택"}
                           </button>
                           <button
                             onClick={openKakaoNavi}
-                            className="rounded bg-yellow-300 px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-yellow-400 transition"
+                            className="bg-tertiary text-secondary text-sm font-semibold rounded-lvl2 px-4 py-2 hover:scale-[1.02] transition-all"
                           >
                             카카오 내비
                           </button>
