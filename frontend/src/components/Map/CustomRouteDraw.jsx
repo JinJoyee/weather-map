@@ -156,7 +156,10 @@ export default function CustomRouteDraw({ onSaved }) {
       {showModal && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
           <div className="bg-white rounded-2xl p-6 w-80 shadow-xl">
-            <h2 className="text-lg font-bold text-secondary mb-4">경로 저장</h2>
+            <h2 className="text-lg font-bold text-secondary mb-1">경로 저장</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              출발지 1개 · 경유지 {points.length - 2}개 · 도착지 1개
+            </p>
             <div className="flex flex-col gap-3">
               <input
                 type="text"
