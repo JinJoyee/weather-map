@@ -2,29 +2,29 @@ import httpx
 from app.config import KAKAO_REST_API_KEY
 
 CONTEXT_WAYPOINTS = {
+    # 자외선_높음(UV 6~7): 중앙로 지하상가 입구→출구 경유
+    "자외선_높음": [
+        {"lat": 36.3270, "lng": 127.4218, "label": "중앙로 지하상가 입구", "type": "indoor"},
+        {"lat": 36.3262, "lng": 127.4195, "label": "중앙로 지하상가 출구", "type": "indoor"},
+    ],
+    # 자외선_매우높음(UV >= 8): 갤러리아 + 중앙로 지하상가 경유
+    "자외선_매우높음": [
+        {"lat": 36.3519, "lng": 127.3782, "label": "갤러리아 타임월드", "type": "indoor"},
+        {"lat": 36.3271, "lng": 127.4215, "label": "중앙로 지하상가", "type": "indoor"},
+    ],
+    # 비/눈: 실내 대피
     "비": [
-        {"lat": 36.3519, "lng": 127.3782, "label": "갤러리아 타임월드", "type": "shelter"},
-        {"lat": 36.3271, "lng": 127.4215, "label": "중앙로 지하상가", "type": "shelter"},
+        {"lat": 36.3519, "lng": 127.3782, "label": "갤러리아 타임월드", "type": "indoor"},
+        {"lat": 36.3271, "lng": 127.4215, "label": "중앙로 지하상가", "type": "indoor"},
     ],
     "눈": [
-        {"lat": 36.3519, "lng": 127.3782, "label": "갤러리아 타임월드", "type": "shelter"},
-        {"lat": 36.3271, "lng": 127.4215, "label": "중앙로 지하상가", "type": "shelter"},
+        {"lat": 36.3519, "lng": 127.3782, "label": "갤러리아 타임월드", "type": "indoor"},
+        {"lat": 36.3271, "lng": 127.4215, "label": "중앙로 지하상가", "type": "indoor"},
     ],
+    # 야간: 대로변 4차선 이상 중심
     "야간": [
         {"lat": 36.3284, "lng": 127.4282, "label": "으능정이 문화의거리", "type": "lit_road"},
         {"lat": 36.3277, "lng": 127.4273, "label": "성심당 본점 일대", "type": "lit_road"},
-    ],
-    "자외선_높음": [
-        {"lat": 36.3689, "lng": 127.3894, "label": "한밭수목원", "type": "shade"},
-        {"lat": 36.3277, "lng": 127.4273, "label": "성심당 본점 일대", "type": "shade"},
-    ],
-    "자외선_매우높음": [
-        {"lat": 36.3519, "lng": 127.3782, "label": "갤러리아 타임월드", "type": "shelter"},
-        {"lat": 36.3271, "lng": 127.4215, "label": "중앙로 지하상가", "type": "shelter"},
-    ],
-    "주간": [
-        {"lat": 36.3041, "lng": 127.4168, "label": "보문산공원", "type": "park"},
-        {"lat": 36.3689, "lng": 127.3894, "label": "한밭수목원", "type": "park"},
     ],
 }
 
@@ -52,7 +52,7 @@ async def fetch_kakao_route(
     }
     if waypoints:
         # Kakao Mobility는 경유지 최대 3개, lng,lat 순서
-        wps = waypoints[:1]
+        wps = waypoints[:2]  # 입구+출구 쌍 전달
         params["waypoints"] = "|".join([f"{wp['lng']},{wp['lat']}" for wp in wps])
 
     try:
@@ -89,7 +89,7 @@ async def build_routes(
     )
 
     # 상황 인식 경로: 그늘/공원 경유지 포함
-    uv_waypoints = [wp for wp in waypoints if wp.get("type") in ("shade", "park", "shelter")]
+    uv_waypoints = [wp for wp in waypoints if wp.get("type") in ("indoor", "lit_road", "shelter")]
     context_polyline = await fetch_kakao_route(
         start_lat, start_lng, end_lat, end_lng,
         waypoints=uv_waypoints[:1] if uv_waypoints else None,

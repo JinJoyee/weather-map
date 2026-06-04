@@ -90,6 +90,21 @@ export default function RouteCompare() {
       polyline.setMap(mapInstance.current);
       polylinesRef.current[key] = polyline;
     });
+
+    // 자외선 회피 경로의 경유지(실내) 마커 표시
+    const contextWaypoints = routes.context?.waypoints ?? [];
+    contextWaypoints.forEach((wp) => {
+      const marker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(wp.lat, wp.lng),
+        map: mapInstance.current,
+      });
+      const infoWindow = new kakao.maps.InfoWindow({
+        content: `<div style="padding:4px 8px;font-size:12px;white-space:nowrap">🏢 ${wp.label}</div>`,
+      });
+      kakao.maps.event.addListener(marker, "click", () =>
+        infoWindow.open(mapInstance.current, marker)
+      );
+    });
   }, [routes]);
 
   const handleSelectRoute = (key) => {
