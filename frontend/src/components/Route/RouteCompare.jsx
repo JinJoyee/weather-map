@@ -3,6 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { FaClock, FaSun, FaStar } from "react-icons/fa";
 import { fetchRouteRecommend } from "../../api/route";
 
+function calcTravelTime(route, mode) {
+  if (!route) return null;
+  if (mode === "walk") return route.distance != null ? Math.ceil(route.distance / 67)  : null;
+  if (mode === "bike") return route.distance != null ? Math.ceil(route.distance / 250) : null;
+  if (mode === "car")  return route.duration  != null ? Math.ceil(route.duration  / 60) : null;
+  return null;
+}
+
+function formatDistance(m) {
+  if (m == null) return null;
+  return m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`;
+}
+
 const ROUTE_STYLES = {
   normal:  { color: "#2563EB", label: "최단 경로" },
   context: { color: "#16A34A", label: "날씨 최적 경로" },
@@ -28,6 +41,7 @@ export default function RouteCompare() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
+  const [transportMode, setTransportMode] = useState("car");
 
   const navigate = useNavigate();
 
@@ -98,7 +112,10 @@ export default function RouteCompare() {
     const { kakao } = window;
     if (!routes || !mapInstance.current || !kakao) return;
 
-    Object.values(polylinesRef.current).forEach((pl) => pl.setMap(null));
+    Object.values(polylinesRef.current).forEach(({ outer, inner }) => {
+      outer.setMap(null);
+      inner.setMap(null);
+    });
     polylinesRef.current = {};
 
     const bounds = new kakao.maps.LatLngBounds();
@@ -112,15 +129,27 @@ export default function RouteCompare() {
       path.forEach((p) => bounds.extend(p));
       hasPolyline = true;
 
-      const polyline = new kakao.maps.Polyline({
+      const outerPl = new kakao.maps.Polyline({
         path,
-        strokeWeight: 5,
-        strokeColor: style.color,
-        strokeOpacity: 0.8,
+        strokeWeight: 10,
+        strokeColor: "#FFFFFF",
+        strokeOpacity: 0.9,
         strokeStyle: "solid",
+        endArrow: true,
       });
-      polyline.setMap(mapInstance.current);
-      polylinesRef.current[key] = polyline;
+      outerPl.setMap(mapInstance.current);
+
+      const innerPl = new kakao.maps.Polyline({
+        path,
+        strokeWeight: 6,
+        strokeColor: style.color,
+        strokeOpacity: 0.9,
+        strokeStyle: "solid",
+        endArrow: true,
+      });
+      innerPl.setMap(mapInstance.current);
+
+      polylinesRef.current[key] = { outer: outerPl, inner: innerPl };
     });
 
     if (hasPolyline) {
@@ -139,7 +168,10 @@ export default function RouteCompare() {
     endMarkerRef.current = null;
     pickStepRef.current = 0;
 
-    Object.values(polylinesRef.current).forEach((pl) => pl.setMap(null));
+    Object.values(polylinesRef.current).forEach(({ outer, inner }) => {
+      outer.setMap(null);
+      inner.setMap(null);
+    });
     polylinesRef.current = {};
 
     setStartPos(null);
@@ -156,10 +188,15 @@ export default function RouteCompare() {
 
   const handleSelectRoute = (key) => {
     setSelectedRoute(key);
-    Object.entries(polylinesRef.current).forEach(([k, pl]) => {
-      pl.setOptions({
-        strokeWeight: k === key ? 9 : 3,
-        strokeOpacity: k === key ? 1.0 : 0.3,
+    Object.entries(polylinesRef.current).forEach(([k, { outer, inner }]) => {
+      const isSelected = k === key;
+      outer.setOptions({
+        strokeWeight: isSelected ? 16 : 10,
+        strokeOpacity: isSelected ? 1.0 : 0.4,
+      });
+      inner.setOptions({
+        strokeWeight: isSelected ? 10 : 6,
+        strokeOpacity: isSelected ? 1.0 : 0.3,
       });
     });
   };
@@ -336,12 +373,45 @@ export default function RouteCompare() {
                     </p>
 
                     {card.key !== "custom" && (
-                      <p className="mb-3 text-xs text-gray-500">
-                        경유지 수: {route?.waypoints?.length ?? 0}
-                        {route?.polyline?.length
-                          ? ` · 경로 좌표 ${route.polyline.length}점`
-                          : " · 경로 없음"}
-                      </p>
+                      <>
+                        <div className="flex gap-1 mb-2 mt-1">
+                          {[
+                            { mode: "walk", label: "도보", icon: "🚶" },
+                            { mode: "bike", label: "자전거", icon: "🚲" },
+                            { mode: "car",  label: "자동차", icon: "🚗" },
+                          ].map(({ mode, label, icon }) => (
+                            <button
+                              key={mode}
+                              onClick={() => setTransportMode(mode)}
+                              className={`flex-1 text-xs py-1 rounded border transition ${
+                                transportMode === mode
+                                  ? "bg-gray-700 text-white border-gray-700"
+                                  : "bg-white text-gray-500 border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              {icon} {label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="mb-2 text-sm font-semibold text-gray-800">
+                          {route
+                            ? calcTravelTime(route, transportMode) != null
+                              ? `약 ${calcTravelTime(route, transportMode)}분`
+                              : "정보 없음"
+                            : "—"}
+                          {route?.distance != null && (
+                            <span className="ml-2 text-xs font-normal text-gray-500">
+                              {formatDistance(route.distance)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mb-3 text-xs text-gray-500">
+                          경유지 수: {route?.waypoints?.length ?? 0}
+                          {route?.polyline?.length
+                            ? ` · 경로 좌표 ${route.polyline.length}점`
+                            : " · 경로 없음"}
+                        </p>
+                      </>
                     )}
 
                     <div className="flex flex-wrap gap-2">

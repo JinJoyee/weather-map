@@ -38,17 +38,24 @@ export default function CustomRouteDraw() {
       pointsRef.current = newPoints;
       setPoints([...newPoints]);
 
-      if (polylineRef.current) polylineRef.current.setMap(null);
+      if (polylineRef.current) {
+        polylineRef.current.outer.setMap(null);
+        polylineRef.current.inner.setMap(null);
+        polylineRef.current = null;
+      }
       if (newPoints.length >= 2) {
         const path = newPoints.map((p) => new k.maps.LatLng(p.lat, p.lng));
-        polylineRef.current = new k.maps.Polyline({
-          path,
-          strokeWeight: 4,
-          strokeColor: "#10B981",
-          strokeOpacity: 0.9,
-          strokeStyle: "solid",
+        const outerPl = new k.maps.Polyline({
+          path, strokeWeight: 10, strokeColor: "#FFFFFF",
+          strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
         });
-        polylineRef.current.setMap(mapInstance.current);
+        outerPl.setMap(mapInstance.current);
+        const innerPl = new k.maps.Polyline({
+          path, strokeWeight: 6, strokeColor: "#10B981",
+          strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
+        });
+        innerPl.setMap(mapInstance.current);
+        polylineRef.current = { outer: outerPl, inner: innerPl };
       }
     });
   }, []);
@@ -59,7 +66,11 @@ export default function CustomRouteDraw() {
     const lastMarker = markersRef.current.pop();
     if (lastMarker) lastMarker.setMap(null);
 
-    if (polylineRef.current) { polylineRef.current.setMap(null); polylineRef.current = null; }
+    if (polylineRef.current) {
+      polylineRef.current.outer.setMap(null);
+      polylineRef.current.inner.setMap(null);
+      polylineRef.current = null;
+    }
 
     const newPoints = pointsRef.current.slice(0, -1);
     pointsRef.current = newPoints;
@@ -68,21 +79,28 @@ export default function CustomRouteDraw() {
     const { kakao } = window;
     if (newPoints.length >= 2 && kakao) {
       const path = newPoints.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
-      polylineRef.current = new kakao.maps.Polyline({
-        path,
-        strokeWeight: 4,
-        strokeColor: "#10B981",
-        strokeOpacity: 0.9,
-        strokeStyle: "solid",
+      const outerPl = new kakao.maps.Polyline({
+        path, strokeWeight: 10, strokeColor: "#FFFFFF",
+        strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
       });
-      polylineRef.current.setMap(mapInstance.current);
+      outerPl.setMap(mapInstance.current);
+      const innerPl = new kakao.maps.Polyline({
+        path, strokeWeight: 6, strokeColor: "#10B981",
+        strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
+      });
+      innerPl.setMap(mapInstance.current);
+      polylineRef.current = { outer: outerPl, inner: innerPl };
     }
   };
 
   const handleClear = () => {
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
-    if (polylineRef.current) { polylineRef.current.setMap(null); polylineRef.current = null; }
+    if (polylineRef.current) {
+      polylineRef.current.outer.setMap(null);
+      polylineRef.current.inner.setMap(null);
+      polylineRef.current = null;
+    }
     pointsRef.current = [];
     setPoints([]);
   };

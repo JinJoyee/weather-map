@@ -89,7 +89,7 @@ def test_get_waypoints_for_unknown_tag():
 
 
 def test_build_routes_normal():
-    with patch("app.services.route_engine.fetch_kakao_route", new=AsyncMock(return_value=[])):
+    with patch("app.services.route_engine._fetch_kakao_route_full", new=AsyncMock(return_value=([], None, None))):
         result = asyncio.run(build_routes(["주간"], 36.35, 127.38, 36.36, 127.39))
     assert "normal" in result
     assert "context" in result
@@ -97,7 +97,7 @@ def test_build_routes_normal():
 
 
 def test_build_routes_night():
-    with patch("app.services.route_engine.fetch_kakao_route", new=AsyncMock(return_value=[])):
+    with patch("app.services.route_engine._fetch_kakao_route_full", new=AsyncMock(return_value=([], None, None))):
         result = asyncio.run(build_routes(["야간"], 36.35, 127.38, 36.36, 127.39))
     assert result["context"]["route_option"] == "bigroad"
 

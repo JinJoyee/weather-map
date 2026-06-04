@@ -110,6 +110,49 @@ async def _get_context_waypoint(
     return []
 
 
+async def _fetch_kakao_route_full(
+    start_lat: float, start_lng: float,
+    end_lat: float, end_lng: float,
+    waypoints: list = None,
+    priority: str = "RECOMMEND",
+) -> tuple:
+    """카카오 경로 API 호출, (polyline, duration_sec, distance_m) 반환. 실패 시 ([], None, None)."""
+    url = "https://apis-navi.kakaomobility.com/v1/directions"
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
+    params = {
+        "origin": f"{start_lng},{start_lat}",
+        "destination": f"{end_lng},{end_lat}",
+        "priority": priority,
+    }
+    if waypoints:
+        params["waypoints"] = "|".join(
+            [f"{wp['lng']},{wp['lat']}" for wp in waypoints[:1]]
+        )
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers, params=params)
+            data = resp.json()
+
+        routes = data.get("routes", [])
+        if not routes or routes[0].get("result_code") != 0:
+            return [], None, None
+
+        summary = routes[0].get("summary", {})
+        duration = summary.get("duration")   # 초 단위
+        distance = summary.get("distance")   # 미터 단위
+
+        polyline = []
+        for section in routes[0]["sections"]:
+            for road in section["roads"]:
+                vx = road["vertexes"]
+                for i in range(0, len(vx) - 1, 2):
+                    polyline.append({"lat": vx[i + 1], "lng": vx[i]})
+        return polyline, duration, distance
+    except Exception:
+        return [], None, None
+
+
 async def fetch_kakao_route(
     start_lat: float, start_lng: float,
     end_lat: float, end_lng: float,
@@ -160,26 +203,28 @@ async def build_routes(
     )
 
     # 최단 경로 (시간 기준, 카카오 모빌리티 그대로)
-    normal_polyline = await fetch_kakao_route(
+    normal_polyline, normal_duration, normal_distance = await _fetch_kakao_route_full(
         start_lat, start_lng, end_lat, end_lng, priority="TIME"
     )
 
     # 날씨 최적 경로: 경유지 포함 시도 → 실패 시 경유지 없이 재시도 → 최종 폴백 normal 재활용
     if context_wps:
-        context_polyline = await fetch_kakao_route(
+        context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
             start_lat, start_lng, end_lat, end_lng,
             waypoints=context_wps, priority="RECOMMEND",
         )
         if not context_polyline:
-            context_polyline = await fetch_kakao_route(
+            context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
                 start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
             )
     else:
-        context_polyline = await fetch_kakao_route(
+        context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
             start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
         )
     if not context_polyline:
         context_polyline = normal_polyline
+        context_duration = normal_duration
+        context_distance = normal_distance
 
     route_option = "bigroad" if "야간" in context_tags else "normal"
 
@@ -202,6 +247,8 @@ async def build_routes(
             "waypoints": [],
             "route_option": "normal",
             "polyline": normal_polyline,
+            "duration": normal_duration,
+            "distance": normal_distance,
         },
         "context": {
             "type": "context",
@@ -210,5 +257,7 @@ async def build_routes(
             "route_option": route_option,
             "context_tags": context_tags,
             "polyline": context_polyline,
+            "duration": context_duration,
+            "distance": context_distance,
         },
     }
