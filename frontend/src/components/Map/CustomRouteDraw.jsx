@@ -39,6 +39,28 @@ export default function CustomRouteDraw({ onSaved }) {
     clearMap();
   };
 
+  useEffect(() => {
+    const { kakao } = window;
+    const map = mapInstance.current;
+    if (!kakao || !map || !drawing) return;
+
+    const listener = kakao.maps.event.addListener(map, 'click', (e) => {
+      const latlng = e.latLng;
+      setPoints((prev) => {
+        const next = [...prev, { lat: latlng.getLat(), lng: latlng.getLng() }];
+        const marker = new kakao.maps.Marker({
+          position: latlng,
+          title: next.length === 1 ? '출발' : `${next.length}`,
+        });
+        marker.setMap(map);
+        markersRef.current.push(marker);
+        return next;
+      });
+    });
+
+    return () => kakao.maps.event.removeListener(map, 'click', listener);
+  }, [drawing]);
+
   return (
     <div className="relative w-full h-screen">
       <div ref={mapRef} className="w-full h-full" />
