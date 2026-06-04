@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy.orm import Session
 
 from app.config import JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -17,7 +17,11 @@ router = APIRouter(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 class SignupRequest(BaseModel):
     username: str
@@ -60,7 +64,7 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
 
-    hashed_password = pwd_context.hash(request.password)
+    hashed_password = hash_password(request.password)
     new_user = User(username=request.username, password=hashed_password)
     
     db.add(new_user)
@@ -83,7 +87,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 틀렸습니다.")
     
-    if not pwd_context.verify(request.password, user.password):
+    if not verify_password(request.password, user.password):
         raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 틀렸습니다.")
 
     access_token = create_access_token(data={"sub": user.username})
