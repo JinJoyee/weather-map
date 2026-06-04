@@ -79,7 +79,15 @@ export default function RouteList() {
 
   return (
     <div className="min-h-screen bg-neutral px-6 py-10 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-secondary mb-6">내 커스텀 경로</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-secondary">내 커스텀 경로</h1>
+        <button
+          onClick={fetchRoutes}
+          className="text-sm text-primary font-medium hover:opacity-70 transition-all"
+        >
+          새로고침
+        </button>
+      </div>
 
       {routes.length === 0 ? (
         <div className="glass-panel p-8 text-center">
