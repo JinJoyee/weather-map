@@ -107,6 +107,8 @@ export default function CustomRouteDraw({ onSaved }) {
       setDrawing(false);
       clearMap();
       setPoints([]);
+      setForm({ name: '', context_tag: '', is_public: false });
+      alert(`"${form.name}" 경로가 저장되었습니다.`);
       if (onSaved) onSaved();
     } catch (err) {
       const { message } = resolveApiError(err);
