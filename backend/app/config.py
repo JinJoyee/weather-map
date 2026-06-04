@@ -9,7 +9,9 @@ JWT_SECRET = os.getenv("JWT_SECRET", "secret")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 UV_API_KEY = os.getenv("UV_API_KEY")
 
-JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+# 추가
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
