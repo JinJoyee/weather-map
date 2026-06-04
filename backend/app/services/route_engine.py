@@ -95,11 +95,11 @@ async def _get_context_waypoint(
     dist_m = _haversine_m(start_lat, start_lng, end_lat, end_lng)
     radius = int(min(max(dist_m / 2, 1000), 3000))
 
-    # 자외선 높음 이상 (shade 점수 40+) → 실제 경로에서 가까운 공원 경유
+    # 자외선 높음 이상 (shade 점수 40+) → 가로수길(도로 위) 우선, 공원 입구 폴백
     if shade_score >= 40:
-        wp = await _search_place_near(mid_lat, mid_lng, "공원", radius)
+        wp = await _search_place_near(mid_lat, mid_lng, "가로수길", radius)
         if not wp:
-            wp = await _search_place_near(mid_lat, mid_lng, "수목원", radius)
+            wp = await _search_place_near(mid_lat, mid_lng, "공원 입구", radius)
         return [wp] if wp else CONTEXT_WAYPOINTS.get("자외선_높음", [])[:1]
 
     # 야간 → 밝은 거리 정적 경유지
@@ -164,12 +164,22 @@ async def build_routes(
         start_lat, start_lng, end_lat, end_lng, priority="TIME"
     )
 
-    # 날씨 최적 경로 (경유지 포함 시 우회, 없으면 RECOMMEND 기본)
-    context_polyline = await fetch_kakao_route(
-        start_lat, start_lng, end_lat, end_lng,
-        waypoints=context_wps if context_wps else None,
-        priority="RECOMMEND",
-    )
+    # 날씨 최적 경로: 경유지 포함 시도 → 실패 시 경유지 없이 재시도 → 최종 폴백 normal 재활용
+    if context_wps:
+        context_polyline = await fetch_kakao_route(
+            start_lat, start_lng, end_lat, end_lng,
+            waypoints=context_wps, priority="RECOMMEND",
+        )
+        if not context_polyline:
+            context_polyline = await fetch_kakao_route(
+                start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
+            )
+    else:
+        context_polyline = await fetch_kakao_route(
+            start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
+        )
+    if not context_polyline:
+        context_polyline = normal_polyline
 
     route_option = "bigroad" if "야간" in context_tags else "normal"
 

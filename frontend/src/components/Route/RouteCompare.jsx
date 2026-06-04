@@ -4,8 +4,8 @@ import { FaClock, FaSun, FaStar } from "react-icons/fa";
 import { fetchRouteRecommend } from "../../api/route";
 
 const ROUTE_STYLES = {
-  normal:  { color: "#3B82F6" },
-  context: { color: "#F59E0B" },
+  normal:  { color: "#2563EB", label: "최단 경로" },
+  context: { color: "#16A34A", label: "날씨 최적 경로" },
 };
 
 const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
@@ -218,11 +218,33 @@ export default function RouteCompare() {
             다시 설정
           </button>
         )}
+
+        {/* 지도 범례 */}
+        {routes && (
+          <div className="absolute bottom-3 left-3 z-10 bg-white/95 rounded-lg px-3 py-2 shadow-md pointer-events-none">
+            {Object.entries(ROUTE_STYLES).map(([key, style]) => (
+              <div key={key} className="flex items-center gap-2 text-xs text-gray-700 mb-0.5 last:mb-0">
+                <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: style.color }} />
+                <span>{style.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 하단 패널 */}
       <div className="flex-1 overflow-y-auto p-4">
-        <h1 className="mb-2 text-xl font-bold">추천 경로 비교</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-xl font-bold">추천 경로 비교</h1>
+          {startPos && endPos && (
+            <button
+              onClick={handleReset}
+              className="text-sm text-primary font-medium hover:opacity-70 transition-all"
+            >
+              새 경로 탐색
+            </button>
+          )}
+        </div>
 
         {!startPos || !endPos ? (
           <p className="text-gray-400 text-sm mt-6 text-center">
