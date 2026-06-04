@@ -17,8 +17,8 @@ function formatDistance(m) {
 }
 
 const ROUTE_STYLES = {
-  normal:  { color: "#2563EB", label: "최단 경로",    strokeStyle: "solid" },
-  context: { color: "#16A34A", label: "날씨 최적 경로", strokeStyle: "shortdash" },
+  normal:  { color: "#2563EB", label: "최단 경로",     strokeStyle: "solid" },
+  context: { color: "#F59E0B", label: "날씨 최적 경로", strokeStyle: "solid" },
 };
 
 const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };

@@ -106,7 +106,25 @@ async def _get_context_waypoint(
     if "야간" in tags:
         return CONTEXT_WAYPOINTS["야간"][:1]
 
-    # 비/눈 → 경유지 없음 (경고 메시지로 대응)
+    # 비 → 지하도/지하상가 동적 검색 (실내 경유 안전 경로)
+    if "비" in tags:
+        wp = await _search_place_near(mid_lat, mid_lng, "지하도", radius)
+        if not wp:
+            wp = await _search_place_near(mid_lat, mid_lng, "지하상가", radius)
+        return [wp] if wp else []
+
+    # 눈 → 지하도/지하상가 동적 검색 (비와 동일 전략)
+    if "눈" in tags:
+        wp = await _search_place_near(mid_lat, mid_lng, "지하도", radius)
+        if not wp:
+            wp = await _search_place_near(mid_lat, mid_lng, "지하상가", radius)
+        return [wp] if wp else []
+
+    # 주간(맑음) → 가로수길 경유 산책 경로 (두 경로가 항상 달라야 함)
+    if "주간" in tags:
+        wp = await _search_place_near(mid_lat, mid_lng, "가로수길", radius)
+        return [wp] if wp else []
+
     return []
 
 
@@ -235,8 +253,12 @@ async def build_routes(
         context_desc = f"자외선 회피 그늘 경로{f' — {wp_label} 경유' if wp_label else ''}"
     elif "야간" in context_tags:
         context_desc = f"야간 밝은 거리 경로{f' — {wp_label} 경유' if wp_label else ''}"
-    elif "비" in context_tags or "눈" in context_tags:
-        context_desc = "날씨 안전 경로 (카카오 추천 기준)"
+    elif "비" in context_tags:
+        context_desc = f"비 조건 실내 경유 안전 경로{f' — {wp_label} 경유' if wp_label else ''}"
+    elif "눈" in context_tags:
+        context_desc = f"눈 조건 실내 경유 안전 경로{f' — {wp_label} 경유' if wp_label else ''}"
+    elif "주간" in context_tags:
+        context_desc = f"산책로 권장 경로{f' — {wp_label} 경유' if wp_label else ''}"
     else:
         context_desc = "날씨 최적 경로"
 
