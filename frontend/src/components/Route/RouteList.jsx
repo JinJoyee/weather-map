@@ -35,7 +35,7 @@ export default function RouteList() {
   }, []);
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`"${name}" 경로를 삭제하시겠습니까?`)) return;
+    if (!window.confirm(`"${name}" 경로를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
     try {
       await api.delete(`/api/routes/custom/${id}`);
       setRoutes((prev) => prev.filter((r) => r.id !== id));
