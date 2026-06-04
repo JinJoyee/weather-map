@@ -91,8 +91,6 @@ async def get_weather(lat: float, lng: float):
     result = {
         "lat": lat,
         "lng": lng,
-        "nx": nx,
-        "ny": ny,
         "temperature": None,
         "rain_probability": 0,
         "snow_probability": 0,
@@ -123,6 +121,7 @@ async def get_weather(lat: float, lng: float):
     date_str = today_kst.strftime("%Y-%m-%d")
     result["sunrise"] = f"{date_str}T{sunrise_hour:02d}:00:00+09:00"
     result["sunset"] = f"{date_str}T{sunset_hour:02d}:00:00+09:00"
+    result["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     return result
 
