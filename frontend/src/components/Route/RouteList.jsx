@@ -69,8 +69,14 @@ export default function RouteList() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral flex items-center justify-center">
+      <div className="min-h-screen bg-neutral flex flex-col items-center justify-center gap-3">
         <p className="text-red-500 text-sm">{error}</p>
+        <button
+          onClick={fetchRoutes}
+          className="text-sm text-primary font-medium underline"
+        >
+          다시 시도
+        </button>
       </div>
     );
   }
