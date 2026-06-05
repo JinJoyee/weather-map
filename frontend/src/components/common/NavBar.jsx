@@ -4,6 +4,7 @@ import { logout, getToken } from '../../api/auth';
 const NAV_ITEMS = [
   { to: '/map', label: '지도' },
   { to: '/routes', label: '경로 비교' },
+  { to: '/draw', label: '경로 그리기' },
   { to: '/custom', label: '경로 목록' },
 ];
 
