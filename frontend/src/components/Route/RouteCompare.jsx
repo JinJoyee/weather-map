@@ -59,6 +59,7 @@ export default function RouteCompare() {
   const [recommendation, setRecommendation] = useState("");
   const [contextTags, setContextTags] = useState([]);
   const [warnings, setWarnings] = useState([]);
+  const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
@@ -116,6 +117,7 @@ export default function RouteCompare() {
         setRecommendation(data.recommendation);
         setContextTags(data.context_tags || []);
         setWarnings(data.warnings || []);
+        setWeather(data.weather || null);
       } catch {
         setError("경로를 불러오지 못했습니다.");
       } finally {
@@ -205,6 +207,7 @@ export default function RouteCompare() {
     setRecommendation("");
     setContextTags([]);
     setWarnings([]);
+    setWeather(null);
     setError(null);
     setSelectedRoute(null);
     setIsLoading(false);
@@ -291,15 +294,25 @@ export default function RouteCompare() {
           </div>
         ) : routes ? (
           <>
-            {/* 추천 배너 + 컨텍스트 태그 통합 */}
+            {/* 추천 배너 + 날씨 요약 */}
             {recommendation && (
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                <span className="flex-1">{recommendation}</span>
-                {contextTags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-blue-100 px-2 py-0.5 text-xs">
-                    #{tag}
-                  </span>
-                ))}
+              <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 font-medium">{recommendation}</span>
+                  {contextTags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-blue-100 px-2 py-0.5 text-xs">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+                {weather && (
+                  <p className="mt-1.5 text-xs text-blue-500">
+                    현재 날씨: {weather.temperature != null ? `${weather.temperature}°C` : "—"}
+                    {" · "}UV {weather.uv_index ?? "—"}
+                    {" · "}강수 {weather.rain_probability ?? 0}%
+                    {weather.weather ? ` · ${weather.weather}` : ""}
+                  </p>
+                )}
               </div>
             )}
 
@@ -345,40 +358,55 @@ export default function RouteCompare() {
                       </p>
 
                       {/* 이동수단 토글 */}
-                      {key !== "custom" && (
-                        <>
-                          <div className="mb-3 flex overflow-hidden rounded-lg border border-gray-200">
-                            {MODES.map((m, i) => (
-                              <button
-                                key={m.key}
-                                onClick={() => setTransportMode(m.key)}
-                                className={`flex-1 py-1.5 text-xs transition-colors ${
-                                  i > 0 ? "border-l border-gray-200" : ""
-                                } ${
-                                  transportMode === m.key
-                                    ? "bg-[#2563EB] text-white"
-                                    : "text-gray-400 hover:bg-gray-50"
-                                }`}
-                              >
-                                {m.label}
-                              </button>
-                            ))}
-                          </div>
+                      {key !== "custom" && (() => {
+                        const isContext = key === "context";
+                        const effectiveMode = isContext && transportMode === "car" ? "walk" : transportMode;
+                        return (
+                          <>
+                            <div className="mb-3 flex overflow-hidden rounded-lg border border-gray-200">
+                              {MODES.map((m, i) => {
+                                const isCarOnContext = isContext && m.key === "car";
+                                return (
+                                  <button
+                                    key={m.key}
+                                    disabled={isCarOnContext}
+                                    title={isCarOnContext ? "날씨 최적 경로는 도보/자전거 기준입니다" : undefined}
+                                    onClick={() => !isCarOnContext && setTransportMode(m.key)}
+                                    className={`flex-1 py-1.5 text-xs transition-colors ${
+                                      i > 0 ? "border-l border-gray-200" : ""
+                                    } ${
+                                      isCarOnContext
+                                        ? "opacity-30 cursor-not-allowed text-gray-400"
+                                        : effectiveMode === m.key
+                                          ? "bg-[#2563EB] text-white"
+                                          : "text-gray-400 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    {m.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
 
-                          <div className="mb-3 text-sm font-semibold text-gray-800">
-                            {route
-                              ? calcTravelTime(route, transportMode) != null
-                                ? `약 ${calcTravelTime(route, transportMode)}분`
-                                : "정보 없음"
-                              : "—"}
-                            {formatDistance(route, transportMode) && (
-                              <span className="ml-2 text-xs font-normal text-gray-400">
-                                · {formatDistance(route, transportMode)}
-                              </span>
+                            {isContext && (
+                              <p className="mb-1 text-xs text-amber-500">도보/자전거 기준 경로</p>
                             )}
-                          </div>
-                        </>
-                      )}
+
+                            <div className="mb-3 text-sm font-semibold text-gray-800">
+                              {route
+                                ? calcTravelTime(route, effectiveMode) != null
+                                  ? `약 ${calcTravelTime(route, effectiveMode)}분`
+                                  : "정보 없음"
+                                : "—"}
+                              {formatDistance(route, effectiveMode) && (
+                                <span className="ml-2 text-xs font-normal text-gray-400">
+                                  · {formatDistance(route, effectiveMode)}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
 
                       {/* 커스텀 경로 안내 */}
                       {key === "custom" && (
