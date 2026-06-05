@@ -1,6 +1,7 @@
 import httpx
 import math
 from app.config import KAKAO_REST_API_KEY
+from app.services.osm_router import compute_weather_route
 
 # 정적 경유지 (야간 전용 + 폴백)
 CONTEXT_WAYPOINTS = {
@@ -227,29 +228,36 @@ async def build_routes(
         start_lat, start_lng, end_lat, end_lng, priority="TIME"
     )
 
-    # 도보/자전거용 거리: RECOMMEND 경로(고속화도로 제외)로 별도 계산
-    _, _, normal_foot_distance = await _fetch_kakao_route_full(
+    # 도보/자전거용 폴리라인 + 거리: RECOMMEND 경로(고속화도로 제외)로 별도 계산
+    foot_polyline, _, normal_foot_distance = await _fetch_kakao_route_full(
         start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND"
     )
 
-    # 날씨 최적 경로: 경유지 포함 시도 → 실패 시 경유지 없이 재시도 → 최종 폴백 normal 재활용
-    if context_wps:
-        context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
-            start_lat, start_lng, end_lat, end_lng,
-            waypoints=context_wps, priority="RECOMMEND",
-        )
+    # 날씨 최적 경로: OSM 가중치 라우팅 우선 → 실패 시 Kakao waypoint 폴백
+    context_polyline, context_distance = compute_weather_route(
+        start_lat, start_lng, end_lat, end_lng,
+        context_tags, scores or {}
+    )
+    if context_polyline:
+        # 도보 기준 소요시간 (4km/h ≈ 67m/min)
+        context_duration = int(context_distance / 67) if context_distance else None
+    else:
+        # 폴백 1: Kakao waypoint 경로
+        if context_wps:
+            context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
+                start_lat, start_lng, end_lat, end_lng,
+                waypoints=context_wps, priority="RECOMMEND",
+            )
+        # 폴백 2: 경유지 없는 RECOMMEND
         if not context_polyline:
             context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
                 start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
             )
-    else:
-        context_polyline, context_duration, context_distance = await _fetch_kakao_route_full(
-            start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND",
-        )
-    if not context_polyline:
-        context_polyline = normal_polyline
-        context_duration = normal_duration
-        context_distance = normal_distance
+        # 폴백 3: normal 경로 재활용
+        if not context_polyline:
+            context_polyline = normal_polyline
+            context_duration = normal_duration
+            context_distance = normal_distance
 
     route_option = "bigroad" if "야간" in context_tags else "normal"
 
@@ -275,10 +283,11 @@ async def build_routes(
             "description": "자동차 최단 시간 경로 (카카오 내비)",
             "waypoints": [],
             "route_option": "normal",
-            "polyline": normal_polyline,
+            "polyline": normal_polyline,             # 자동차용 (TIME priority)
+            "foot_polyline": foot_polyline or [],    # 도보/자전거용 (RECOMMEND priority)
             "duration": normal_duration,
             "distance": normal_distance,
-            "foot_distance": normal_foot_distance,  # 도보/자전거 소요 시간 계산용
+            "foot_distance": normal_foot_distance,
         },
         "context": {
             "type": "context",
