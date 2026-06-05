@@ -244,8 +244,8 @@ export default function RouteCompare() {
 
   return (
     <div className="flex flex-col h-screen dark:bg-surface-dark">
-      {/* 지도 */}
-      <div className="relative w-full" style={{ height: "45vh" }}>
+      {/* 지도 — 모바일 40vh, 데스크탑 45vh */}
+      <div className="relative w-full h-[40vh] md:h-[45vh]">
         <div ref={mapRef} className="w-full h-full" />
 
         {isPolylineUpdating && (
@@ -374,7 +374,8 @@ export default function RouteCompare() {
                         <Icon className={`text-base ${accent.icon}`} />
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">{title}</h3>
                       </div>
-                      <p className="mb-3 text-xs text-gray-400 dark:text-slate-500">
+                      {/* text-xs → text-sm: 모바일 가독성 */}
+                      <p className="mb-3 text-sm text-gray-400 dark:text-slate-500">
                         {key !== "custom" && route?.description
                           ? route.description
                           : accent.desc}
@@ -434,11 +435,12 @@ export default function RouteCompare() {
                         <p className="mb-3 text-sm text-gray-300 dark:text-slate-600">아직 경로 없음</p>
                       )}
 
+                      {/* py-2 → py-2.5: 터치 타깃 확보 */}
                       <div className="flex gap-2">
                         {key === "custom" ? (
                           <button
                             onClick={() => navigate("/draw")}
-                            className="flex-1 rounded-lg border border-gray-200 dark:border-slate-600 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 transition hover:bg-gray-50 dark:hover:bg-slate-700"
+                            className="flex-1 rounded-lg border border-gray-200 dark:border-slate-600 py-2.5 text-sm font-medium text-gray-500 dark:text-slate-400 transition hover:bg-gray-50 dark:hover:bg-slate-700"
                           >
                             경로 그리기
                           </button>
@@ -446,13 +448,13 @@ export default function RouteCompare() {
                           <>
                             <button
                               onClick={() => handleSelectRoute(key)}
-                              className="flex-1 rounded-lg bg-[#2563EB] py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                              className="flex-1 rounded-lg bg-[#2563EB] py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
                             >
                               {isSelected ? "✓ 선택됨" : "이 경로 선택"}
                             </button>
                             <button
                               onClick={openKakaoNavi}
-                              className="rounded-lg border border-gray-200 dark:border-slate-600 px-3 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 transition hover:bg-gray-50 dark:hover:bg-slate-700"
+                              className="rounded-lg border border-gray-200 dark:border-slate-600 px-3 py-2.5 text-sm font-medium text-gray-500 dark:text-slate-400 transition hover:bg-gray-50 dark:hover:bg-slate-700"
                             >
                               카카오 내비
                             </button>
