@@ -11,6 +11,16 @@ import osmnx as ox
 
 logger = logging.getLogger(__name__)
 
+
+def _haversine_m(lat1, lng1, lat2, lng2) -> float:
+    R = 6_371_000
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lng2 - lng1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return R * 2 * math.asin(math.sqrt(a))
+
+
 GRAPH_PATH = Path(__file__).parent.parent.parent / "data" / "daejeon_weather_graph.graphml"
 _G = None
 
@@ -64,6 +74,15 @@ def compute_weather_route(
 
         start_node = ox.nearest_nodes(G, start_lng, start_lat)
         end_node   = ox.nearest_nodes(G, end_lng, end_lat)
+
+        # 입력 좌표가 그래프 경계 밖이면 폴백 사용 (nearest_nodes가 엉뚱한 노드 반환)
+        MAX_SNAP_M = 500
+        sn = G.nodes[start_node]
+        en = G.nodes[end_node]
+        if (_haversine_m(start_lat, start_lng, sn["y"], sn["x"]) > MAX_SNAP_M or
+                _haversine_m(end_lat, end_lng, en["y"], en["x"]) > MAX_SNAP_M):
+            logger.info("입력 좌표가 OSM 그래프 범위 밖 → 폴백 사용")
+            return [], None
 
         # scores를 0~1 범위로 정규화
         shade_w  = min(scores.get("shade", 0) / 70.0, 1.0)
