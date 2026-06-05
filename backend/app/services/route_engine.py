@@ -1,6 +1,6 @@
 import httpx
 import math
-from app.config import KAKAO_REST_API_KEY
+from app.config import KAKAO_REST_API_KEY, TMAP_APP_KEY
 from app.services.osm_router import compute_weather_route
 
 # 정적 경유지 (야간 전용 + 폴백)
@@ -131,6 +131,39 @@ async def _get_context_waypoint(
     return []
 
 
+async def _fetch_tmap_foot_route(
+    start_lat: float, start_lng: float,
+    end_lat: float, end_lng: float,
+) -> tuple:
+    """T맵 보행자 경로 API. (polyline, distance_m) 반환. 실패 시 ([], None)."""
+    url = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1"
+    headers = {"appKey": TMAP_APP_KEY, "Content-Type": "application/json"}
+    body = {
+        "startX": str(start_lng), "startY": str(start_lat),
+        "endX":   str(end_lng),   "endY":   str(end_lat),
+        "reqCoordType": "WGS84GEO", "resCoordType": "WGS84GEO",
+        "startName": "출발지", "endName": "목적지",
+        "searchOption": "0",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(url, headers=headers, json=body)
+            data = resp.json()
+        features = data.get("features", [])
+        polyline, distance = [], None
+        for f in features:
+            geom = f.get("geometry", {})
+            props = f.get("properties", {})
+            if distance is None and props.get("totalDistance"):
+                distance = props["totalDistance"]
+            if geom.get("type") == "LineString":
+                for coord in geom["coordinates"]:
+                    polyline.append({"lat": coord[1], "lng": coord[0]})
+        return polyline, distance
+    except Exception:
+        return [], None
+
+
 async def _fetch_kakao_route_full(
     start_lat: float, start_lng: float,
     end_lat: float, end_lng: float,
@@ -228,10 +261,14 @@ async def build_routes(
         start_lat, start_lng, end_lat, end_lng, priority="TIME"
     )
 
-    # 도보/자전거용 폴리라인 + 거리: RECOMMEND 경로(고속화도로 제외)로 별도 계산
-    foot_polyline, _, normal_foot_distance = await _fetch_kakao_route_full(
-        start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND"
+    # 도보/자전거용 폴리라인: T맵 보행자 경로 우선, 실패 시 Kakao RECOMMEND 폴백
+    foot_polyline, normal_foot_distance = await _fetch_tmap_foot_route(
+        start_lat, start_lng, end_lat, end_lng
     )
+    if not foot_polyline:
+        foot_polyline, _, normal_foot_distance = await _fetch_kakao_route_full(
+            start_lat, start_lng, end_lat, end_lng, priority="RECOMMEND"
+        )
 
     # 날씨 최적 경로: OSM 가중치 라우팅 우선 → 실패 시 Kakao waypoint 폴백
     context_polyline, context_distance = compute_weather_route(
