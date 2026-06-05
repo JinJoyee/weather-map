@@ -29,9 +29,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral flex items-center justify-center px-6">
+    <div className="min-h-screen bg-neutral dark:bg-surface-dark flex items-center justify-center px-6">
       <div className="glass-panel p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-secondary mb-6 text-center">로그인</h1>
+        <h1 className="text-2xl font-bold text-secondary dark:text-blue-300 mb-6 text-center">로그인</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             name="username"
@@ -40,7 +40,7 @@ export default function LoginPage() {
             value={form.username}
             onChange={handleChange}
             required
-            className="border border-gray-300 rounded-lvl2 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-[#191C1E] dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 rounded-lvl2 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <input
             name="password"
@@ -49,18 +49,18 @@ export default function LoginPage() {
             value={form.password}
             onChange={handleChange}
             required
-            className="border border-gray-300 rounded-lvl2 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-[#191C1E] dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 rounded-lvl2 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          {error && <p className="text-red-500 text-xs">{error}</p>}
+          {error && <p className="text-red-500 dark:text-red-400 text-xs">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="bg-primary text-white py-2 rounded-lvl2 font-bold hover:scale-[1.02] transition-all disabled:opacity-50"
+            className="bg-primary dark:bg-blue-600 text-white py-2.5 rounded-lvl2 font-bold hover:scale-[1.02] transition-all disabled:opacity-50"
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>
         </form>
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-4">
           계정이 없으신가요?{' '}
           <Link to="/signup" className="text-primary font-semibold">회원가입</Link>
         </p>
