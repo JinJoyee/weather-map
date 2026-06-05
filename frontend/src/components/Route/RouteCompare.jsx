@@ -68,6 +68,7 @@ export default function RouteCompare() {
   const [routes, setRoutes] = useState(null);
   const [recommendation, setRecommendation] = useState("");
   const [contextTags, setContextTags] = useState([]);
+  const [isPolylineUpdating, setIsPolylineUpdating] = useState(false);
   const [warnings, setWarnings] = useState([]);
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -128,6 +129,8 @@ export default function RouteCompare() {
         setContextTags(data.context_tags || []);
         setWarnings(data.warnings || []);
         setWeather(data.weather || null);
+        const n = data.routes?.normal;
+        console.log('[Route] normal.polyline:', n?.polyline?.length, '/ foot_polyline:', n?.foot_polyline?.length);
       } catch {
         setError("경로를 불러오지 못했습니다.");
       } finally {
@@ -196,6 +199,8 @@ export default function RouteCompare() {
       bounds.extend(new kakao.maps.LatLng(endPos.lat, endPos.lng));
       mapInstance.current.setBounds(bounds);
     }
+
+    setTimeout(() => setIsPolylineUpdating(false), 200);
   }, [routes, startPos, endPos, transportMode]);
 
   const handleReset = () => {
@@ -243,6 +248,18 @@ export default function RouteCompare() {
       {/* 지도 */}
       <div className="relative w-full" style={{ height: "45vh" }}>
         <div ref={mapRef} className="w-full h-full" />
+
+        {isPolylineUpdating && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+            <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 shadow-lg text-sm font-semibold text-gray-700">
+              <svg className="h-4 w-4 animate-spin text-[#2563EB]" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+              </svg>
+              경로 업데이트 중
+            </div>
+          </div>
+        )}
 
         {!startPos && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-white/95 rounded-lg px-4 py-2 shadow-md text-sm font-semibold text-gray-700 whitespace-nowrap pointer-events-none">
@@ -381,7 +398,7 @@ export default function RouteCompare() {
                                     key={m.key}
                                     disabled={isCarOnContext}
                                     title={isCarOnContext ? "날씨 최적 경로는 도보/자전거 기준입니다" : undefined}
-                                    onClick={() => !isCarOnContext && setTransportMode(m.key)}
+                                    onClick={() => { if (!isCarOnContext) { setIsPolylineUpdating(true); setTransportMode(m.key); } }}
                                     className={`flex-1 py-1.5 text-xs transition-colors ${
                                       i > 0 ? "border-l border-gray-200" : ""
                                     } ${
