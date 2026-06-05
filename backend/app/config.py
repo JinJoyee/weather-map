@@ -13,8 +13,9 @@ UV_API_KEY = os.getenv("UV_API_KEY")
 TMAP_APP_KEY = os.getenv("TMAP_APP_KEY")
 
 # 추가
+_default_origins = "https://weather-map-five-opal.vercel.app"
 ALLOWED_ORIGINS = [
     origin.strip()
-    for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    for origin in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",")
     if origin.strip()
 ]
