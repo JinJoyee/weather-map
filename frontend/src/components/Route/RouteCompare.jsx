@@ -45,6 +45,16 @@ const CARDS = [
 
 const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
 
+function getActivePolyline(routes, key, mode) {
+  const route = routes?.[key];
+  if (!route) return null;
+  // context 경로는 항상 OSM/RECOMMEND 계열 — 그대로 사용
+  if (key === "context") return route.polyline;
+  // normal: 자동차=TIME, 도보·자전거=RECOMMEND(foot_polyline)
+  if (mode === "car") return route.polyline;
+  return route.foot_polyline?.length ? route.foot_polyline : route.polyline;
+}
+
 export default function RouteCompare() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -142,7 +152,7 @@ export default function RouteCompare() {
 
     const pathMap = {};
     Object.entries(ROUTE_STYLES).forEach(([key]) => {
-      const polylineData = routes[key]?.polyline;
+      const polylineData = getActivePolyline(routes, key, transportMode);
       if (!polylineData?.length) return;
       const path = polylineData.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
       path.forEach((p) => bounds.extend(p));
@@ -186,7 +196,7 @@ export default function RouteCompare() {
       bounds.extend(new kakao.maps.LatLng(endPos.lat, endPos.lng));
       mapInstance.current.setBounds(bounds);
     }
-  }, [routes, startPos, endPos]);
+  }, [routes, startPos, endPos, transportMode]);
 
   const handleReset = () => {
     if (startMarkerRef.current) startMarkerRef.current.setMap(null);
