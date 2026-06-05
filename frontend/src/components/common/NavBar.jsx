@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { logout, getToken } from '../../api/auth';
 import { useTheme } from '../../context/ThemeContext';
@@ -13,67 +14,106 @@ function NavBar() {
   const navigate = useNavigate();
   const isLoggedIn = Boolean(getToken());
   const { theme, toggleTheme } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/');
+    setMenuOpen(false);
   };
 
   return (
-    <nav className="bg-secondary text-white px-6 py-3 flex items-center gap-8 shadow-md">
-      <NavLink
-        to="/"
-        end
-        className="font-extrabold text-lg tracking-tight text-white hover:opacity-80 transition-opacity"
-      >
-        Weather Map
-      </NavLink>
-
-      <div className="flex gap-6">
-        {NAV_ITEMS.map(({ to, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `text-sm font-medium transition-all ${
-                isActive
-                  ? 'text-tertiary underline underline-offset-4'
-                  : 'text-white hover:opacity-75'
-              }`
-            }
-          >
-            {label}
-          </NavLink>
-        ))}
-      </div>
-
-      <div className="ml-auto flex items-center gap-3">
-        <button
-          onClick={toggleTheme}
-          className="text-white hover:opacity-75 transition-opacity"
-          aria-label="테마 전환"
+    <nav className="relative bg-secondary text-white shadow-md">
+      <div className="px-6 py-3 flex items-center gap-8">
+        <NavLink
+          to="/"
+          end
+          className="font-extrabold text-lg tracking-tight text-white hover:opacity-80 transition-opacity"
+          onClick={() => setMenuOpen(false)}
         >
-          <span className="material-symbols-outlined text-xl">
-            {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-          </span>
-        </button>
+          Weather Map
+        </NavLink>
 
-        {isLoggedIn ? (
+        {/* 데스크탑 메뉴 */}
+        <div className="hidden md:flex gap-6">
+          {NAV_ITEMS.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `text-sm font-medium transition-all ${
+                  isActive
+                    ? 'text-tertiary underline underline-offset-4'
+                    : 'text-white hover:opacity-75'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
+
+        {/* 우상단 버튼 그룹 */}
+        <div className="ml-auto flex items-center gap-3">
           <button
-            onClick={handleLogout}
-            className="text-sm font-medium text-white hover:opacity-75 transition-all"
+            onClick={toggleTheme}
+            className="text-white hover:opacity-75 transition-opacity"
+            aria-label="테마 전환"
           >
-            로그아웃
+            <span className="material-symbols-outlined text-xl">
+              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
           </button>
-        ) : (
-          <NavLink
-            to="/login"
-            className="text-sm font-medium text-white hover:opacity-75 transition-all"
+
+          {isLoggedIn ? (
+            <button
+              onClick={handleLogout}
+              className="text-sm font-medium text-white hover:opacity-75 transition-all"
+            >
+              로그아웃
+            </button>
+          ) : (
+            <NavLink
+              to="/login"
+              onClick={() => setMenuOpen(false)}
+              className="text-sm font-medium text-white hover:opacity-75 transition-all"
+            >
+              로그인
+            </NavLink>
+          )}
+
+          {/* 햄버거 (모바일만 표시) */}
+          <button
+            className="md:hidden text-white hover:opacity-75 transition-opacity"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="메뉴 열기"
           >
-            로그인
-          </NavLink>
-        )}
+            <span className="material-symbols-outlined text-2xl">
+              {menuOpen ? 'close' : 'menu'}
+            </span>
+          </button>
+        </div>
       </div>
+
+      {/* 모바일 드롭다운 */}
+      {menuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-secondary z-50 shadow-lg border-t border-white/10">
+          {NAV_ITEMS.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                `block px-6 py-3.5 text-sm font-medium transition-all ${
+                  isActive ? 'text-tertiary bg-white/10' : 'text-white hover:bg-white/10'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }
