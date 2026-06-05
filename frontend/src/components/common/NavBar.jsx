@@ -1,15 +1,18 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { logout, getToken } from '../../api/auth';
+import { useTheme } from '../../context/ThemeContext';
 
 const NAV_ITEMS = [
   { to: '/map', label: '지도' },
   { to: '/routes', label: '경로 비교' },
+  { to: '/draw', label: '경로 그리기' },
   { to: '/custom', label: '경로 목록' },
 ];
 
 function NavBar() {
   const navigate = useNavigate();
   const isLoggedIn = Boolean(getToken());
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -44,7 +47,17 @@ function NavBar() {
         ))}
       </div>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-3">
+        <button
+          onClick={toggleTheme}
+          className="text-white hover:opacity-75 transition-opacity"
+          aria-label="테마 전환"
+        >
+          <span className="material-symbols-outlined text-xl">
+            {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+          </span>
+        </button>
+
         {isLoggedIn ? (
           <button
             onClick={handleLogout}
