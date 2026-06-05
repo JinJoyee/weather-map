@@ -35,7 +35,7 @@ export default function MapView() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen dark:bg-surface-dark">
       <div ref={mapRef} className="w-full h-full" />
 
       {weather && (
@@ -47,8 +47,8 @@ export default function MapView() {
             size="text-2xl"
           />
           <div className="text-sm">
-            <p className="font-bold text-secondary">{weather.weather}</p>
-            <p className="text-gray-500">UV {weather.uv_index} · 강수 {weather.rain_probability}%</p>
+            <p className="font-bold text-secondary dark:text-blue-300">{weather.weather}</p>
+            <p className="text-gray-500 dark:text-slate-400">UV {weather.uv_index} · 강수 {weather.rain_probability}%</p>
           </div>
         </div>
       )}
