@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { getToken } from '../../api/auth';
 import { resolveApiError } from '../../utils/apiErrorHandler';
+import RouteMapModal from './RouteMapModal';
 
 export default function RouteList() {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [modalRoute, setModalRoute] = useState(null);
 
   const fetchRoutes = async () => {
     setLoading(true);
@@ -45,16 +47,16 @@ export default function RouteList() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral flex items-center justify-center">
-        <p className="text-gray-500 text-sm">불러오는 중...</p>
+      <div className="min-h-screen bg-neutral dark:bg-surface-dark flex items-center justify-center">
+        <p className="text-gray-500 dark:text-slate-400 text-sm">불러오는 중...</p>
       </div>
     );
   }
 
   if (error === 'UNAUTHORIZED') {
     return (
-      <div className="min-h-screen bg-neutral flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-600 font-medium">로그인이 필요합니다.</p>
+      <div className="min-h-screen bg-neutral dark:bg-surface-dark flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-600 dark:text-slate-400 font-medium">로그인이 필요합니다.</p>
         <Link
           to="/login"
           className="bg-primary text-white px-6 py-2 rounded-lvl2 font-bold hover:scale-[1.02] transition-all"
@@ -67,7 +69,7 @@ export default function RouteList() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen bg-neutral dark:bg-surface-dark flex flex-col items-center justify-center gap-3">
         <p className="text-red-500 text-sm">{error}</p>
         <button
           onClick={fetchRoutes}
@@ -80,9 +82,12 @@ export default function RouteList() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral px-6 py-10 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-neutral dark:bg-surface-dark px-6 py-10 max-w-2xl mx-auto">
+      {modalRoute && (
+        <RouteMapModal route={modalRoute} onClose={() => setModalRoute(null)} />
+      )}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-secondary">내 커스텀 경로</h1>
+        <h1 className="text-3xl font-bold text-secondary dark:text-blue-300">내 커스텀 경로</h1>
         <button
           onClick={fetchRoutes}
           className="text-sm text-primary font-medium hover:opacity-70 transition-all"
@@ -93,14 +98,18 @@ export default function RouteList() {
 
       {routes.length === 0 ? (
         <div className="glass-panel p-8 text-center">
-          <p className="text-gray-500 mb-4">아직 저장된 경로가 없습니다.</p>
+          <p className="text-gray-500 dark:text-slate-400 mb-4">아직 저장된 경로가 없습니다.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           {routes.map((route) => (
-            <div key={route.id} className="glass-panel p-5 flex justify-between items-start">
+            <div
+              key={route.id}
+              className="glass-panel p-5 flex justify-between items-start cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setModalRoute(route)}
+            >
               <div>
-                <h3 className="font-bold text-secondary text-lg">{route.name}</h3>
+                <h3 className="font-bold text-secondary dark:text-blue-300 text-lg">{route.name}</h3>
                 <div className="flex gap-2 mt-1 flex-wrap">
                   {route.context_tag && (
                     <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">
@@ -113,16 +122,16 @@ export default function RouteList() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">
                   경유지 {Array.isArray(route.waypoints) ? route.waypoints.length : 0}개
-                  {route.waypoints?.length > 0 && ` · ${route.waypoints.length}개 경유`}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-slate-500">
                   저장일: {route.created_at ? new Date(route.created_at).toLocaleDateString('ko-KR') : '-'}
                 </p>
+                <p className="text-xs text-primary mt-1">지도에서 보기 →</p>
               </div>
               <button
-                onClick={() => handleDelete(route.id, route.name)}
+                onClick={(e) => { e.stopPropagation(); handleDelete(route.id, route.name); }}
                 className="text-red-500 text-sm font-medium hover:opacity-70 transition-all"
               >
                 삭제
