@@ -74,7 +74,7 @@ export default function RouteCompare() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
-  const [transportMode, setTransportMode] = useState("car");
+  const [transportModes, setTransportModes] = useState({ normal: "car", context: "walk" });
 
   const navigate = useNavigate();
 
@@ -153,7 +153,7 @@ export default function RouteCompare() {
 
     const pathMap = {};
     Object.entries(ROUTE_STYLES).forEach(([key]) => {
-      const polylineData = getActivePolyline(routes, key, transportMode);
+      const polylineData = getActivePolyline(routes, key, transportModes[key]);
       if (!polylineData?.length) return;
       const path = polylineData.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
       path.forEach((p) => bounds.extend(p));
@@ -199,7 +199,7 @@ export default function RouteCompare() {
     }
 
     setTimeout(() => setIsPolylineUpdating(false), 200);
-  }, [routes, startPos, endPos, transportMode]);
+  }, [routes, startPos, endPos, transportModes]);
 
   const handleReset = () => {
     if (startMarkerRef.current) startMarkerRef.current.setMap(null);
@@ -385,7 +385,7 @@ export default function RouteCompare() {
                       {/* 이동수단 토글 */}
                       {key !== "custom" && (() => {
                         const isContext = key === "context";
-                        const effectiveMode = isContext && transportMode === "car" ? "walk" : transportMode;
+                        const effectiveMode = transportModes[key];
                         return (
                           <>
                             <div className="mb-3 flex overflow-hidden rounded-lg border border-gray-200">
@@ -396,7 +396,7 @@ export default function RouteCompare() {
                                     key={m.key}
                                     disabled={isCarOnContext}
                                     title={isCarOnContext ? "날씨 최적 경로는 도보/자전거 기준입니다" : undefined}
-                                    onClick={() => { if (!isCarOnContext) { setIsPolylineUpdating(true); setTransportMode(m.key); } }}
+                                    onClick={() => { if (!isCarOnContext) { setIsPolylineUpdating(true); setTransportModes(prev => ({ ...prev, [key]: m.key })); } }}
                                     className={`flex-1 py-1.5 text-xs transition-colors ${
                                       i > 0 ? "border-l border-gray-200" : ""
                                     } ${
