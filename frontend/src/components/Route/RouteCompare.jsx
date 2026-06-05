@@ -130,7 +130,10 @@ export default function RouteCompare() {
         setWarnings(data.warnings || []);
         setWeather(data.weather || null);
         const n = data.routes?.normal;
-        console.log('[Route] normal.polyline:', n?.polyline?.length, '/ foot_polyline:', n?.foot_polyline?.length);
+        const isSame = JSON.stringify(n?.polyline?.[0]) === JSON.stringify(n?.foot_polyline?.[0]) &&
+                       JSON.stringify(n?.polyline?.slice(-1)) === JSON.stringify(n?.foot_polyline?.slice(-1));
+        console.log('[Route] normal.polyline:', n?.polyline?.length, '/ foot_polyline:', n?.foot_polyline?.length, '/ 경로 동일?', isSame);
+        if (isSame) console.warn('[Route] ⚠️ TIME과 RECOMMEND가 동일한 경로 반환 — 카카오 API 단거리 동일 경로 현상');
       } catch {
         setError("경로를 불러오지 못했습니다.");
       } finally {
