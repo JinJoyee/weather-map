@@ -136,7 +136,7 @@ async def get_uv_index(lat: float, lng: float):
 
     now = datetime.now()
     time = now.strftime("%y%m%d") + f"{(now.hour // 3) * 3:02d}"
-    area_no = "3300000000"  # 대전광역시
+    area_no = "3000000000"  # 청주시
 
     url = "http://apis.data.go.kr/1360000/LivingWthrIdxServiceV4/getUVIdxV4"
     params = {

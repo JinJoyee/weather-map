@@ -5,7 +5,8 @@ from app.models.context_waypoint import ContextWaypoint
 
 def test_user_model_has_required_columns():
     assert hasattr(User, 'id')
-    assert hasattr(User, 'username')
+    assert hasattr(User, 'email')
+    assert hasattr(User, 'nickname')
     assert hasattr(User, 'password')
     assert hasattr(User, 'created_at')
 

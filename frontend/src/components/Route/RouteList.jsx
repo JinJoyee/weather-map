@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { getToken } from '../../api/auth';
 import { resolveApiError } from '../../utils/apiErrorHandler';
-import RouteMapModal from './RouteMapModal';
 
 export default function RouteList() {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [modalRoute, setModalRoute] = useState(null);
 
   const fetchRoutes = async () => {
     setLoading(true);
@@ -83,9 +81,6 @@ export default function RouteList() {
 
   return (
     <div className="min-h-screen bg-neutral px-6 py-10 max-w-2xl mx-auto">
-      {modalRoute && (
-        <RouteMapModal route={modalRoute} onClose={() => setModalRoute(null)} />
-      )}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-secondary">내 커스텀 경로</h1>
         <button
@@ -103,11 +98,7 @@ export default function RouteList() {
       ) : (
         <div className="flex flex-col gap-4">
           {routes.map((route) => (
-            <div
-              key={route.id}
-              className="glass-panel p-5 flex justify-between items-start cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setModalRoute(route)}
-            >
+            <div key={route.id} className="glass-panel p-5 flex justify-between items-start">
               <div>
                 <h3 className="font-bold text-secondary text-lg">{route.name}</h3>
                 <div className="flex gap-2 mt-1 flex-wrap">
@@ -124,14 +115,14 @@ export default function RouteList() {
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
                   경유지 {Array.isArray(route.waypoints) ? route.waypoints.length : 0}개
+                  {route.waypoints?.length > 0 && ` · ${route.waypoints.length}개 경유`}
                 </p>
                 <p className="text-xs text-gray-400">
                   저장일: {route.created_at ? new Date(route.created_at).toLocaleDateString('ko-KR') : '-'}
                 </p>
-                <p className="text-xs text-primary mt-1">지도에서 보기 →</p>
               </div>
               <button
-                onClick={(e) => { e.stopPropagation(); handleDelete(route.id, route.name); }}
+                onClick={() => handleDelete(route.id, route.name)}
                 className="text-red-500 text-sm font-medium hover:opacity-70 transition-all"
               >
                 삭제
