@@ -10,10 +10,12 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 UV_API_KEY = os.getenv("UV_API_KEY")
+TMAP_APP_KEY = os.getenv("TMAP_APP_KEY")
 
 # 추가
+_default_origins = "https://weather-map-five-opal.vercel.app"
 ALLOWED_ORIGINS = [
     origin.strip()
-    for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    for origin in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",")
     if origin.strip()
 ]

@@ -1,29 +1,80 @@
 import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaClock, FaSun, FaStar } from "react-icons/fa";
+import { FiClock, FiSun, FiStar } from "react-icons/fi";
 import { fetchRouteRecommend } from "../../api/route";
 
-const START_LAT = 36.3504;
-const START_LNG = 127.3845;
-const END_LAT = 36.3623;
-const END_LNG = 127.3568;
+function calcTravelTime(route, mode) {
+  if (!route) return null;
+  // 도보/자전거는 고속화도로 없는 RECOMMEND 거리 기준으로 계산
+  const footDist = route.foot_distance ?? route.distance;
+  if (mode === "walk") return footDist != null ? Math.ceil(footDist / 67)  : null;
+  if (mode === "bike") return footDist != null ? Math.ceil(footDist / 250) : null;
+  if (mode === "car")  return route.duration != null ? Math.ceil(route.duration / 60) : null;
+  return null;
+}
+
+function formatDistance(route, mode) {
+  const m = (mode === "car" ? route?.distance : route?.foot_distance) ?? route?.distance;
+  if (m == null) return null;
+  return m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`;
+}
 
 const ROUTE_STYLES = {
-  normal:  { color: "#3B82F6" },
-  context: { color: "#F59E0B" },
+  normal:  { color: "#2563EB", label: "최단 경로",     strokeStyle: "solid" },
+  context: { color: "#F59E0B", label: "날씨 최적 경로", strokeStyle: "solid" },
 };
+
+// 클래스 이름 전체를 문자열로 — Tailwind 빌드 시 동적 조합 클래스는 제거됨
+const ACCENTS = {
+  normal:  { bar: "bg-[#2563EB]", icon: "text-[#2563EB]", desc: "시간 최단 · 카카오 내비" },
+  context: { bar: "bg-[#F59E0B]", icon: "text-[#F59E0B]", desc: "날씨 맞춤 · 쾌적한 경로" },
+  custom:  { bar: "bg-[#16A34A]", icon: "text-[#16A34A]", desc: "직접 그린 나만의 경로" },
+};
+
+const MODES = [
+  { key: "walk", label: "도보" },
+  { key: "bike", label: "자전거" },
+  { key: "car",  label: "자동차" },
+];
+
+const CARDS = [
+  { key: "normal",  title: "최단 경로",     Icon: FiClock },
+  { key: "context", title: "날씨 최적 경로", Icon: FiSun  },
+  { key: "custom",  title: "커스텀 경로",    Icon: FiStar },
+];
+
+const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
+
+function getActivePolyline(routes, key, mode) {
+  const route = routes?.[key];
+  if (!route) return null;
+  // context 경로는 항상 OSM/RECOMMEND 계열 — 그대로 사용
+  if (key === "context") return route.polyline;
+  // normal: 자동차=TIME, 도보·자전거=RECOMMEND(foot_polyline)
+  if (mode === "car") return route.polyline;
+  return route.foot_polyline?.length ? route.foot_polyline : route.polyline;
+}
 
 export default function RouteCompare() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const polylinesRef = useRef({});
+  const startMarkerRef = useRef(null);
+  const endMarkerRef = useRef(null);
+  const pickStepRef = useRef(0);
 
+  const [startPos, setStartPos] = useState(null);
+  const [endPos, setEndPos] = useState(null);
   const [routes, setRoutes] = useState(null);
   const [recommendation, setRecommendation] = useState("");
   const [contextTags, setContextTags] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isPolylineUpdating, setIsPolylineUpdating] = useState(false);
+  const [warnings, setWarnings] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
+  const [transportMode, setTransportMode] = useState("car");
 
   const navigate = useNavigate();
 
@@ -31,199 +82,395 @@ export default function RouteCompare() {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
 
-    const center = new kakao.maps.LatLng(
-      (START_LAT + END_LAT) / 2,
-      (START_LNG + END_LNG) / 2
-    );
-    mapInstance.current = new kakao.maps.Map(mapRef.current, { center, level: 6 });
+    const center = new kakao.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng);
+    mapInstance.current = new kakao.maps.Map(mapRef.current, { center, level: 7 });
 
-    new kakao.maps.Marker({
-      position: new kakao.maps.LatLng(START_LAT, START_LNG),
-      map: mapInstance.current,
-    });
-    new kakao.maps.Marker({
-      position: new kakao.maps.LatLng(END_LAT, END_LNG),
-      map: mapInstance.current,
+    kakao.maps.event.addListener(mapInstance.current, "click", (mouseEvent) => {
+      if (pickStepRef.current >= 2) return;
+
+      const lat = mouseEvent.latLng.getLat();
+      const lng = mouseEvent.latLng.getLng();
+      const k = window.kakao;
+
+      if (pickStepRef.current === 0) {
+        if (startMarkerRef.current) startMarkerRef.current.setMap(null);
+        startMarkerRef.current = new k.maps.Marker({
+          position: mouseEvent.latLng,
+          map: mapInstance.current,
+        });
+        setStartPos({ lat, lng });
+        pickStepRef.current = 1;
+      } else {
+        if (endMarkerRef.current) endMarkerRef.current.setMap(null);
+        endMarkerRef.current = new k.maps.Marker({
+          position: mouseEvent.latLng,
+          map: mapInstance.current,
+        });
+        setEndPos({ lat, lng });
+        pickStepRef.current = 2;
+      }
     });
   }, []);
 
   useEffect(() => {
+    if (!startPos || !endPos) return;
+
     const loadRoutes = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await fetchRouteRecommend(START_LAT, START_LNG, END_LAT, END_LNG);
+        setRoutes(null);
+        const data = await fetchRouteRecommend(
+          startPos.lat, startPos.lng,
+          endPos.lat,   endPos.lng
+        );
         setRoutes(data.routes);
         setRecommendation(data.recommendation);
         setContextTags(data.context_tags || []);
+        setWarnings(data.warnings || []);
+        setWeather(data.weather || null);
       } catch {
-        setRoutes(null);
-        setRecommendation("");
-        setContextTags([]);
         setError("경로를 불러오지 못했습니다.");
       } finally {
         setIsLoading(false);
       }
     };
     loadRoutes();
-  }, []);
+  }, [startPos, endPos]);
 
   useEffect(() => {
     const { kakao } = window;
     if (!routes || !mapInstance.current || !kakao) return;
 
-    Object.values(polylinesRef.current).forEach((pl) => pl.setMap(null));
+    Object.values(polylinesRef.current).forEach(({ outer, inner }) => {
+      outer?.setMap(null);
+      inner?.setMap(null);
+    });
     polylinesRef.current = {};
 
-    Object.entries(ROUTE_STYLES).forEach(([key, style]) => {
-      const polylineData = routes[key]?.polyline;
-      if (!polylineData?.length) return;
+    const bounds = new kakao.maps.LatLngBounds();
+    let hasPolyline = false;
 
+    const pathMap = {};
+    Object.entries(ROUTE_STYLES).forEach(([key]) => {
+      const polylineData = getActivePolyline(routes, key, transportMode);
+      if (!polylineData?.length) return;
       const path = polylineData.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
-      const polyline = new kakao.maps.Polyline({
+      path.forEach((p) => bounds.extend(p));
+      pathMap[key] = path;
+      hasPolyline = true;
+    });
+
+    Object.entries(ROUTE_STYLES).forEach(([key]) => {
+      const path = pathMap[key];
+      if (!path) return;
+      const outerPl = new kakao.maps.Polyline({
         path,
-        strokeWeight: 5,
-        strokeColor: style.color,
-        strokeOpacity: 0.8,
+        strokeWeight: 10,
+        strokeColor: "#FFFFFF",
+        strokeOpacity: 0.85,
         strokeStyle: "solid",
       });
-      polyline.setMap(mapInstance.current);
-      polylinesRef.current[key] = polyline;
+      outerPl.setMap(mapInstance.current);
+      polylinesRef.current[key] = { outer: outerPl, inner: null };
     });
-  }, [routes]);
+
+    Object.entries(ROUTE_STYLES).forEach(([key, style]) => {
+      const path = pathMap[key];
+      if (!path) return;
+      const innerPl = new kakao.maps.Polyline({
+        path,
+        strokeWeight: 6,
+        strokeColor: style.color,
+        strokeOpacity: 0.95,
+        strokeStyle: style.strokeStyle,
+        endArrow: true,
+      });
+      innerPl.setMap(mapInstance.current);
+      polylinesRef.current[key].inner = innerPl;
+    });
+
+    if (hasPolyline) {
+      mapInstance.current.setBounds(bounds);
+    } else if (startPos && endPos) {
+      bounds.extend(new kakao.maps.LatLng(startPos.lat, startPos.lng));
+      bounds.extend(new kakao.maps.LatLng(endPos.lat, endPos.lng));
+      mapInstance.current.setBounds(bounds);
+    }
+
+    setTimeout(() => setIsPolylineUpdating(false), 200);
+  }, [routes, startPos, endPos, transportMode]);
+
+  const handleReset = () => {
+    if (startMarkerRef.current) startMarkerRef.current.setMap(null);
+    if (endMarkerRef.current)   endMarkerRef.current.setMap(null);
+    startMarkerRef.current = null;
+    endMarkerRef.current   = null;
+    pickStepRef.current    = 0;
+
+    Object.values(polylinesRef.current).forEach(({ outer, inner }) => {
+      outer?.setMap(null);
+      inner?.setMap(null);
+    });
+    polylinesRef.current = {};
+
+    setStartPos(null);
+    setEndPos(null);
+    setRoutes(null);
+    setRecommendation("");
+    setContextTags([]);
+    setWarnings([]);
+    setWeather(null);
+    setError(null);
+    setSelectedRoute(null);
+    setIsLoading(false);
+  };
 
   const handleSelectRoute = (key) => {
     setSelectedRoute(key);
-    Object.entries(polylinesRef.current).forEach(([k, pl]) => {
-      pl.setOptions({
-        strokeWeight: k === key ? 9 : 3,
-        strokeOpacity: k === key ? 1.0 : 0.3,
-      });
+    Object.entries(polylinesRef.current).forEach(([k, { outer, inner }]) => {
+      const isSelected = k === key;
+      outer?.setOptions({ strokeWeight: isSelected ? 16 : 10, strokeOpacity: isSelected ? 1.0 : 0.4 });
+      inner?.setOptions({ strokeWeight: isSelected ? 10 : 6,  strokeOpacity: isSelected ? 1.0 : 0.3 });
     });
   };
 
   const openKakaoNavi = () => {
-    const url = `https://map.kakao.com/link/from/출발지,${START_LAT},${START_LNG}/to/목적지,${END_LAT},${END_LNG}`;
+    if (!startPos || !endPos) return;
+    const url = `https://map.kakao.com/link/from/출발지,${startPos.lat},${startPos.lng}/to/목적지,${endPos.lat},${endPos.lng}`;
     window.open(url, "_blank");
   };
 
-  const cards = [
-    {
-      key: "normal",
-      title: "최단 경로",
-      icon: FaClock,
-      cardClass: "border-blue-400 bg-blue-50",
-      btnClass: "bg-blue-500 hover:bg-blue-600",
-    },
-    {
-      key: "context",
-      title: "자외선 회피 경로",
-      icon: FaSun,
-      cardClass: "border-yellow-400 bg-yellow-50",
-      btnClass: "bg-yellow-500 hover:bg-yellow-600",
-    },
-    {
-      key: "custom",
-      title: "커스텀 경로",
-      icon: FaStar,
-      cardClass: "border-green-400 bg-green-50",
-      btnClass: "bg-green-500 hover:bg-green-600",
-    },
-  ];
-
   return (
     <div className="flex flex-col h-screen">
-      <div ref={mapRef} className="w-full" style={{ height: "45vh" }} />
+      {/* 지도 */}
+      <div className="relative w-full" style={{ height: "45vh" }}>
+        <div ref={mapRef} className="w-full h-full" />
 
+        {isPolylineUpdating && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+            <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 shadow-lg text-sm font-semibold text-gray-700">
+              <svg className="h-4 w-4 animate-spin text-[#2563EB]" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+              </svg>
+              경로 업데이트 중
+            </div>
+          </div>
+        )}
+
+        {!startPos && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-white/95 rounded-lg px-4 py-2 shadow-md text-sm font-semibold text-gray-700 whitespace-nowrap pointer-events-none">
+            📍 출발지를 지도에서 클릭하세요
+          </div>
+        )}
+        {startPos && !endPos && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-white/95 rounded-lg px-4 py-2 shadow-md text-sm font-semibold text-gray-700 whitespace-nowrap pointer-events-none">
+            🏁 도착지를 지도에서 클릭하세요
+          </div>
+        )}
+        {startPos && endPos && (
+          <button
+            onClick={handleReset}
+            className="absolute top-3 right-3 z-10 bg-white/95 rounded-lg px-3 py-1.5 shadow-md text-xs font-semibold text-gray-700 hover:bg-white transition"
+          >
+            다시 설정
+          </button>
+        )}
+
+        {routes && (
+          <div className="absolute bottom-3 left-3 z-10 bg-white/95 rounded-lg px-3 py-2 shadow-md pointer-events-none">
+            {Object.entries(ROUTE_STYLES).map(([key, style]) => (
+              <div key={key} className="flex items-center gap-2 text-xs text-gray-700 mb-0.5 last:mb-0">
+                <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: style.color }} />
+                <span>{style.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 하단 패널 */}
       <div className="flex-1 overflow-y-auto p-4">
-        <h1 className="mb-2 text-xl font-bold">추천 경로 비교</h1>
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-xl font-bold text-gray-900">추천 경로 비교</h1>
+          {startPos && endPos && (
+            <button
+              onClick={handleReset}
+              className="text-sm text-[#2563EB] font-medium hover:opacity-70 transition-all"
+            >
+              새 경로 탐색
+            </button>
+          )}
+        </div>
 
-        {isLoading ? (
-          <p className="text-gray-500">경로를 불러오는 중...</p>
+        {!startPos || !endPos ? (
+          <p className="text-gray-400 text-sm mt-6 text-center">
+            지도에서 출발지와 도착지를 선택하면 경로를 추천해 드립니다.
+          </p>
+        ) : isLoading ? (
+          <p className="text-gray-500 mt-4">경로를 불러오는 중...</p>
         ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : (
+          <div className="mt-4">
+            <p className="text-red-500 mb-2">{error}</p>
+            <button onClick={handleReset} className="text-sm text-[#2563EB] underline">
+              다시 설정
+            </button>
+          </div>
+        ) : routes ? (
           <>
+            {/* 추천 배너 + 날씨 요약 */}
             {recommendation && (
-              <div className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-700">
-                {recommendation}
+              <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 font-medium">{recommendation}</span>
+                  {contextTags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-blue-100 px-2 py-0.5 text-xs">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+                {weather && (
+                  <p className="mt-1.5 text-xs text-blue-500">
+                    현재 날씨: {weather.temperature != null ? `${weather.temperature}°C` : "—"}
+                    {" · "}UV {weather.uv_index ?? "—"}
+                    {" · "}강수 {weather.rain_probability ?? 0}%
+                    {weather.weather ? ` · ${weather.weather}` : ""}
+                  </p>
+                )}
               </div>
             )}
 
-            {contextTags.length > 0 && (
-              <div className="mb-4 flex flex-wrap gap-2">
-                {contextTags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-gray-200 px-3 py-1 text-xs">
-                    #{tag}
-                  </span>
+            {warnings.length > 0 && (
+              <div className="mb-3 flex flex-col gap-1.5">
+                {warnings.map((w, i) => (
+                  <div key={i} className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+                    {w}
+                  </div>
                 ))}
               </div>
             )}
 
-            <div className="flex flex-col gap-3 md:flex-row">
-              {cards.map((card) => {
-                const Icon = card.icon;
-                const isSelected = selectedRoute === card.key;
-                const route = routes?.[card.key];
+            {/* 카드 3개 */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {CARDS.map(({ key, title, Icon }) => {
+                const accent    = ACCENTS[key];
+                const route     = routes?.[key];
+                const isSelected = selectedRoute === key;
 
                 return (
                   <div
-                    key={card.key}
-                    className={`flex-1 rounded-lg border-2 p-4 shadow transition ${card.cardClass} ${
-                      isSelected ? "ring-2 ring-offset-1 ring-gray-500" : ""
+                    key={key}
+                    className={`overflow-hidden rounded-xl border bg-white shadow-sm transition ${
+                      isSelected
+                        ? "border-[#2563EB] ring-2 ring-[#2563EB]/20"
+                        : "border-gray-200"
                     }`}
                   >
-                    <div className="mb-2 flex items-center gap-2">
-                      <Icon size={18} />
-                      <h2 className="text-base font-semibold">{card.title}</h2>
-                    </div>
+                    {/* 상단 컬러 띠 */}
+                    <div className={`h-[3px] w-full ${accent.bar}`} />
 
-                    <p className="mb-1 text-sm text-gray-700">
-                      {card.key === "custom"
-                        ? "직접 그린 나만의 경로"
-                        : (route?.description ?? "설명 없음")}
-                    </p>
-
-                    {card.key !== "custom" && (
-                      <p className="mb-3 text-xs text-gray-500">
-                        경유지 수: {route?.waypoints?.length ?? 0}
-                        {route?.polyline?.length
-                          ? ` · 경로 좌표 ${route.polyline.length}점`
-                          : " · 경로 없음"}
+                    <div className="p-4">
+                      {/* 헤더 */}
+                      <div className="mb-1 flex items-center gap-2">
+                        <Icon className={`text-base ${accent.icon}`} />
+                        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+                      </div>
+                      <p className="mb-3 text-xs text-gray-400">
+                        {key !== "custom" && route?.description
+                          ? route.description
+                          : accent.desc}
                       </p>
-                    )}
 
-                    <div className="flex flex-wrap gap-2">
-                      {card.key === "custom" ? (
-                        <button
-                          onClick={() => navigate("/custom")}
-                          className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
-                        >
-                          경로 그리기
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleSelectRoute(card.key)}
-                            className={`rounded px-3 py-1.5 text-sm text-white transition ${card.btnClass}`}
-                          >
-                            {isSelected ? "✓ 선택됨" : "이 경로 선택"}
-                          </button>
-                          <button
-                            onClick={openKakaoNavi}
-                            className="rounded bg-yellow-300 px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-yellow-400 transition"
-                          >
-                            카카오 내비
-                          </button>
-                        </>
+                      {/* 이동수단 토글 */}
+                      {key !== "custom" && (() => {
+                        const isContext = key === "context";
+                        const effectiveMode = isContext && transportMode === "car" ? "walk" : transportMode;
+                        return (
+                          <>
+                            <div className="mb-3 flex overflow-hidden rounded-lg border border-gray-200">
+                              {MODES.map((m, i) => {
+                                const isCarOnContext = isContext && m.key === "car";
+                                return (
+                                  <button
+                                    key={m.key}
+                                    disabled={isCarOnContext}
+                                    title={isCarOnContext ? "날씨 최적 경로는 도보/자전거 기준입니다" : undefined}
+                                    onClick={() => { if (!isCarOnContext) { setIsPolylineUpdating(true); setTransportMode(m.key); } }}
+                                    className={`flex-1 py-1.5 text-xs transition-colors ${
+                                      i > 0 ? "border-l border-gray-200" : ""
+                                    } ${
+                                      isCarOnContext
+                                        ? "opacity-30 cursor-not-allowed text-gray-400"
+                                        : effectiveMode === m.key
+                                          ? "bg-[#2563EB] text-white"
+                                          : "text-gray-400 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    {m.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {isContext && (
+                              <p className="mb-1 text-xs text-amber-500">도보/자전거 기준 경로</p>
+                            )}
+
+                            <div className="mb-3 text-sm font-semibold text-gray-800">
+                              {route
+                                ? calcTravelTime(route, effectiveMode) != null
+                                  ? `약 ${calcTravelTime(route, effectiveMode)}분`
+                                  : "정보 없음"
+                                : "—"}
+                              {formatDistance(route, effectiveMode) && (
+                                <span className="ml-2 text-xs font-normal text-gray-400">
+                                  · {formatDistance(route, effectiveMode)}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
+
+                      {/* 커스텀 경로 안내 */}
+                      {key === "custom" && (
+                        <p className="mb-3 text-sm text-gray-300">아직 경로 없음</p>
                       )}
+
+                      {/* 버튼 */}
+                      <div className="flex gap-2">
+                        {key === "custom" ? (
+                          <button
+                            onClick={() => navigate("/draw")}
+                            className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-50"
+                          >
+                            경로 그리기
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleSelectRoute(key)}
+                              className="flex-1 rounded-lg bg-[#2563EB] py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                            >
+                              {isSelected ? "✓ 선택됨" : "이 경로 선택"}
+                            </button>
+                            <button
+                              onClick={openKakaoNavi}
+                              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-50"
+                            >
+                              카카오 내비
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
