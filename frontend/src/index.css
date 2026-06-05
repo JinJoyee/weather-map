@@ -6,7 +6,8 @@
 
 @layer base {
   body {
-    @apply font-body bg-neutral text-[#191C1E] min-h-screen m-0;
+    @apply font-body bg-neutral text-[#191C1E] min-h-screen m-0
+           dark:bg-surface-dark dark:text-slate-100;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -16,9 +17,10 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-2xl 
-           border border-white/30 
-           shadow-xl 
+    @apply bg-white/70 dark:bg-slate-800/80
+           backdrop-blur-2xl
+           border border-white/30 dark:border-slate-700/50
+           shadow-xl
            rounded-lvl2;
   }
 }
