@@ -18,3 +18,13 @@ export function logout() {
 export function getToken() {
   return localStorage.getItem('token');
 }
+
+export async function checkUsernameAvailable(username) {
+  const { data } = await api.get(`/api/auth/username-available?username=${encodeURIComponent(username)}`);
+  return data.available;
+}
+
+export async function resetPassword(username, newPassword) {
+  const { data } = await api.post('/api/auth/password/reset', { username, new_password: newPassword });
+  return data;
+}

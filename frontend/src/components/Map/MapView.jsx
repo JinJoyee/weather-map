@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { fetchCurrentWeather } from '../../api/weather';
 import WeatherIcon from '../common/WeatherIcon';
+import MapScreenScaffold from '../../layout/MapScreenScaffold';
 
 const DAEJEON_LAT = 36.3504;
 const DAEJEON_LNG = 127.3845;
@@ -34,24 +35,50 @@ export default function MapView() {
     });
   }, []);
 
-  return (
-    <div className="relative w-full h-screen">
-      <div ref={mapRef} className="w-full h-full" />
-
-      {weather && (
-        <div className="absolute top-4 left-4 glass-panel px-4 py-3 flex items-center gap-3 z-10">
-          <WeatherIcon
-            weather={weather.weather}
-            rainProbability={weather.rain_probability}
-            snowProbability={weather.snow_probability}
-            size="text-2xl"
-          />
-          <div className="text-sm">
-            <p className="font-bold text-secondary">{weather.weather}</p>
-            <p className="text-gray-500">UV {weather.uv_index} · 강수 {weather.rain_probability}%</p>
-          </div>
+  const panel = weather ? (
+    <div className="p-5">
+      <h2 className="text-[17px] font-extrabold text-ink mb-4">현재 날씨</h2>
+      <div className="flex items-center gap-3 p-4 bg-bg rounded-card border border-line">
+        <WeatherIcon
+          weather={weather.weather}
+          rainProbability={weather.rain_probability}
+          snowProbability={weather.snow_probability}
+          size="text-2xl"
+        />
+        <div className="text-sm">
+          <p className="font-bold text-ink">{weather.weather}</p>
+          <p className="text-muted">UV {weather.uv_index} · 강수 {weather.rain_probability}%</p>
+          {weather.temperature != null && (
+            <p className="text-muted">{weather.temperature}°C</p>
+          )}
         </div>
-      )}
+      </div>
+    </div>
+  ) : (
+    <div className="p-5">
+      <h2 className="text-[17px] font-extrabold text-ink mb-4">현재 날씨</h2>
+      <p className="text-faint text-sm">날씨 정보를 불러오는 중...</p>
     </div>
   );
+
+  const map = weather ? (
+    <div className="absolute top-4 left-4 bg-card border border-line px-4 py-3 rounded-card shadow-sm flex items-center gap-3 z-10">
+      <WeatherIcon
+        weather={weather.weather}
+        rainProbability={weather.rain_probability}
+        snowProbability={weather.snow_probability}
+        size="text-2xl"
+      />
+      <div className="text-sm">
+        <p className="font-bold text-ink">{weather.weather}</p>
+        <p className="text-muted">UV {weather.uv_index} · 강수 {weather.rain_probability}%</p>
+      </div>
+    </div>
+  ) : null;
+
+  const sheetHeader = (
+    <h1 className="m-0 text-[20px] font-extrabold text-ink tracking-[-0.02em]">지도</h1>
+  );
+
+  return <MapScreenScaffold mapRef={mapRef} panel={panel} map={map} sheetHeader={sheetHeader} />;
 }

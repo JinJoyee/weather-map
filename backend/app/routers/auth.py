@@ -31,6 +31,10 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
+class ResetPasswordRequest(BaseModel):
+    username: str
+    new_password: str
+
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -98,3 +102,17 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@router.get("/username-available")
+def check_username_available(username: str, db: Session = Depends(get_db)):
+    exists = db.query(User).filter(User.username == username).first() is not None
+    return {"available": not exists}
+
+@router.post("/password/reset")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == request.username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    user.password = hash_password(request.new_password)
+    db.commit()
+    return {"success": True}

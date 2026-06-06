@@ -17,9 +17,9 @@ describe('RouteCompare', () => {
     expect(screen.getByText(/출발지를 지도에서 클릭/)).toBeInTheDocument();
   });
 
-  it('"추천 경로 비교" 제목을 표시한다', () => {
+  it('"경로 비교" 제목을 표시한다', () => {
     renderWithRouter(<RouteCompare />);
-    expect(screen.getByText('추천 경로 비교')).toBeInTheDocument();
+    expect(screen.getByText('경로 비교')).toBeInTheDocument();
   });
 
   it('초기 상태에서 경로 카드가 표시되지 않는다', () => {
