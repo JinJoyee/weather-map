@@ -31,7 +31,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-class PasswordResetRequest(BaseModel):
+class ResetPasswordRequest(BaseModel):
     username: str
     new_password: str
 
@@ -59,20 +59,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     
     return username
-
-@router.get("/username-available")
-async def check_username(username: str, db: Session = Depends(get_db)):
-    exists = db.query(User).filter(User.username == username).first()
-    return {"available": not bool(exists)}
-
-@router.post("/password/reset")
-async def reset_password(req: PasswordResetRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == req.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="존재하지 않는 아이디입니다.")
-    user.password = hash_password(req.new_password)
-    db.commit()
-    return {"success": True, "message": "비밀번호가 변경되었습니다."}
 
 @router.post("/signup")
 async def signup(request: SignupRequest, db: Session = Depends(get_db)):
@@ -116,3 +102,17 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@router.get("/username-available")
+def check_username_available(username: str, db: Session = Depends(get_db)):
+    exists = db.query(User).filter(User.username == username).first() is not None
+    return {"available": not exists}
+
+@router.post("/password/reset")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == request.username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    user.password = hash_password(request.new_password)
+    db.commit()
+    return {"success": True}
