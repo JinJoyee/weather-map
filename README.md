@@ -201,13 +201,58 @@ weather-map/
 
 ---
 
-## 데이터 출처 및 저작권
+## 데이터 출처 및 저작권 (OSM)
 
-이 프로젝트는 **OpenStreetMap** 데이터를 사용하여 대전 보행자 경로 그래프를 구성합니다.
+이 프로젝트는 [OpenStreetMap](https://www.openstreetmap.org) 데이터를 기반으로 대전 보행자 경로 그래프(`backend/data/daejeon_graph.json`)를 구성합니다.
 
-- 지도 데이터: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
-- 데이터 라이선스: [ODbL (Open Database License)](https://opendatacommons.org/licenses/odbl/)
-- OSM 기여 가이드: [Ko:첫 걸음](https://wiki.openstreetmap.org/wiki/Ko:%EC%B2%AB_%EA%B1%B8%EC%9D%8C)
+### 저작자 표기 (Attribution)
+
+[ODbL](https://opendatacommons.org/licenses/odbl/) 라이선스 요구에 따라 OSM 데이터를 활용하는 모든 화면에 아래 문구를 표기합니다.
+
+> © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
+
+앱 지도 화면 우하단에 해당 문구가 상시 노출됩니다.
+
+### 라이선스 구분
+
+| 대상 | 라이선스 |
+|------|----------|
+| 프로젝트 소스 코드 | MIT License |
+| `backend/data/daejeon_graph.json` | [ODbL 1.0](https://opendatacommons.org/licenses/odbl/) (OSM 파생 데이터베이스) |
+
+`daejeon_graph.json`은 OpenStreetMap 원본 데이터로부터 생성된 파생 데이터베이스입니다.  
+ODbL에 따라 재배포 시 동일 조건(ODbL)을 유지해야 합니다.
+
+ODbL 주요 의무사항:
+- **Attribution** — OSM 데이터를 표시하는 모든 화면에 "© OpenStreetMap contributors" 표기
+- **Share-Alike** — 파생 데이터베이스 재배포 시 ODbL 유지
+- **Keep Open** — 파생 데이터베이스는 공개 접근 가능 형태로 제공
+
+### 그래프 데이터 상세
+
+`daejeon_graph.json`은 [osmnx](https://github.com/gboeing/osmnx) 2.1.0으로 빌드 시점에 1회 다운로드한 **정적 스냅샷**입니다 (실시간 데이터 아님).
+
+| 항목 | 값 |
+|------|----|
+| 중심 좌표 | 36.3504°N, 127.3845°E (대전역 인근) |
+| 반경 | 5,000m |
+| 네트워크 타입 | `walk` (보행자 전용 도로만 포함) |
+| 데이터 원본 | OpenStreetMap (osmnx → Overpass API 경유 다운로드) |
+
+### 그래프 재빌드 방법
+
+빌드 전용 의존성 (`osmnx`, `networkx`)은 런타임에 필요하지 않습니다.
+
+```bash
+cd backend
+pip install osmnx==2.1.0 networkx==3.6.1
+
+# 1단계: OSM에서 보행자 그래프 다운로드 → graphml 저장
+python scripts/build_daejeon_graph.py
+
+# 2단계: graphml → 경량 JSON 변환 (배포용)
+python scripts/preprocess_graph.py
+```
 
 ---
 

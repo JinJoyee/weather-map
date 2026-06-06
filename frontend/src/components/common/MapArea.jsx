@@ -9,6 +9,15 @@ export default function MapArea({ mapRef, children }) {
       {/* Kakao map mounts here */}
       <div ref={mapRef} className="absolute inset-0 bg-bg" />
       {children}
+      {/* ODbL 의무 저작자 표기 — OSM 경로 데이터 사용 */}
+      <a
+        href="https://www.openstreetmap.org/copyright"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-1 right-1 z-10 text-[10px] text-white/70 bg-black/40 px-1.5 py-0.5 rounded pointer-events-auto"
+      >
+        © OpenStreetMap contributors
+      </a>
     </div>
   );
 }
