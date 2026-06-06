@@ -196,13 +196,42 @@ weather-map/
 
 ---
 
-## 데이터 출처 및 저작권
+## 데이터 출처 및 저작권 (OSM)
 
-이 프로젝트는 **OpenStreetMap** 데이터를 사용하여 대전 보행자 경로 그래프를 구성합니다.
+이 프로젝트는 [OpenStreetMap](https://www.openstreetmap.org) 데이터를 기반으로 대전 보행자 경로 그래프(`backend/data/daejeon_graph.json`)를 구성합니다.
 
-- 지도 데이터: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
-- 데이터 라이선스: [ODbL (Open Database License)](https://opendatacommons.org/licenses/odbl/)
-- OSM 기여 가이드: [Ko:첫 걸음](https://wiki.openstreetmap.org/wiki/Ko:%EC%B2%AB_%EA%B1%B8%EC%9D%8C)
+### 저작자 표기 (Attribution)
+
+ODbL 라이선스에 따라 OSM 데이터를 사용하는 모든 화면에 아래 표기를 포함합니다.
+
+> © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
+
+앱 지도 화면 우하단에 표기가 상시 노출됩니다.
+
+### 라이선스 (ODbL)
+
+`daejeon_graph.json`은 OSM 원본 데이터의 파생 데이터베이스입니다.  
+[Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/) 에 따라 동일 조건으로 공개합니다.
+
+ODbL 주요 의무사항:
+- **저작자 표기** — 지도·경로 데이터를 표시하는 모든 화면에 "© OpenStreetMap contributors" 표기
+- **동일 조건 공개** — 파생 데이터베이스 재배포 시 ODbL 유지
+- **공개 유지** — 파생 데이터베이스는 공개 접근 가능한 형태로 제공
+
+### 그래프 재빌드 방법
+
+`daejeon_graph.json`은 아래 스크립트로 재생성할 수 있습니다.  
+빌드에는 `osmnx 2.1.0`, `networkx 3.6.1`이 필요합니다 (런타임 의존성 아님).
+
+```bash
+cd backend
+pip install osmnx==2.1.0 networkx==3.6.1
+python scripts/build_daejeon_graph.py   # OSM 다운로드 → graphml 생성
+python scripts/preprocess_graph.py     # graphml → daejeon_graph.json 변환
+```
+
+- 빌드 범위: 대전역 중심 반경 5km 보행자 네트워크
+- 데이터 출처: [Overpass API](https://overpass-api.de) (OSM 실시간 데이터)
 
 ---
 
