@@ -43,10 +43,14 @@ const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
 function SegMode({ mode, setMode }) {
   const opts = [["walk", "도보"], ["bike", "자전거"], ["car", "자동차"]];
   return (
-    <div className="grid grid-cols-3 gap-1 p-1 bg-chip rounded-[14px] mb-4">
+    <div className="grid grid-cols-3 gap-1 p-1 bg-chip dark:bg-dark-chip rounded-[14px] mb-4">
       {opts.map(([k, label]) => (
         <button key={k} onClick={() => setMode(k)}
-          className={`py-2.5 rounded-[11px] text-[13.5px] ${mode === k ? "bg-card shadow-sm text-ink font-bold" : "text-muted font-medium"}`}>
+          className={`py-2.5 rounded-[11px] text-[13.5px] ${
+            mode === k
+              ? "bg-card dark:bg-dark-card shadow-sm text-ink dark:text-dark-ink font-bold"
+              : "text-muted dark:text-dark-muted font-medium"
+          }`}>
           {label}
         </button>
       ))}
@@ -56,17 +60,19 @@ function SegMode({ mode, setMode }) {
 
 function ODPill({ origin, dest }) {
   return (
-    <div className="bg-bg rounded-[14px] border border-line px-3.5 mb-4">
+    <div className="bg-bg dark:bg-dark-bg rounded-[14px] border border-line dark:border-dark-line px-3.5 mb-4">
       <div className="flex items-center gap-3 py-[11px]">
         <span className="w-[11px] h-[11px] rounded-full bg-primary shrink-0" />
-        <span className="flex-1 text-[14.5px] font-semibold text-ink truncate">{origin}</span>
-        <IconChevR size={17} className="text-faint shrink-0" />
+        <span className="flex-1 text-[14.5px] font-semibold text-ink dark:text-dark-ink truncate">
+          {origin}
+        </span>
       </div>
-      <div className="h-px bg-line ml-[22px]" />
+      <div className="h-px bg-line dark:bg-dark-line ml-[22px]" />
       <div className="flex items-center gap-3 py-[11px]">
         <span className="w-[11px] h-[11px] rounded-[3px] bg-[#E5484D] shrink-0" />
-        <span className="flex-1 text-[14.5px] font-semibold text-ink truncate">{dest}</span>
-        <IconChevR size={17} className="text-faint shrink-0" />
+        <span className="flex-1 text-[14.5px] font-semibold text-ink dark:text-dark-ink truncate">
+          {dest}
+        </span>
       </div>
     </div>
   );
@@ -76,13 +82,16 @@ function RecommendationBanner({ weather, recommendation, contextTags }) {
   if (!recommendation) return null;
   return (
     <div className="flex gap-3 p-3.5 rounded-2xl bg-weather/10 border border-weather/30 mb-4">
-      <div className="w-[38px] h-[38px] rounded-xl bg-card grid place-items-center shrink-0">
+      <div className="w-[38px] h-[38px] rounded-xl bg-card dark:bg-dark-card
+                      grid place-items-center shrink-0">
         <IconSun size={21} className="text-weather" />
       </div>
       <div className="min-w-0">
-        <div className="text-sm font-bold text-ink mb-0.5 truncate">{recommendation}</div>
+        <div className="text-sm font-bold text-ink dark:text-dark-ink mb-0.5 truncate">
+          {recommendation}
+        </div>
         {weather && (
-          <div className="text-[12.5px] text-muted leading-snug">
+          <div className="text-[12.5px] text-muted dark:text-dark-muted leading-snug">
             {weather.temperature != null ? `${weather.temperature}°C` : "—"}
             {" · "}UV {weather.uv_index ?? "—"}
             {" · "}강수 {weather.rain_probability ?? 0}%
@@ -96,11 +105,12 @@ function RecommendationBanner({ weather, recommendation, contextTags }) {
 
 function Legend() {
   return (
-    <div className="bg-card rounded-xl px-3 py-2.5 shadow-sm border border-line flex flex-col gap-1.5">
+    <div className="bg-card dark:bg-dark-card rounded-xl px-3 py-2.5 shadow-sm
+                    border border-line dark:border-dark-line flex flex-col gap-1.5">
       {[["bg-primary", "최단"], ["bg-weather", "날씨 최적"]].map(([c, l]) => (
         <div key={l} className="flex items-center gap-2">
           <span className={`w-5 h-1 rounded-full ${c}`} />
-          <span className="text-xs font-semibold text-muted">{l}</span>
+          <span className="text-xs font-semibold text-muted dark:text-dark-muted">{l}</span>
         </div>
       ))}
     </div>
