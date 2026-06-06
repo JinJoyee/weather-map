@@ -51,7 +51,7 @@ export default function CustomRouteDraw() {
         });
         outerPl.setMap(mapInstance.current);
         const innerPl = new k.maps.Polyline({
-          path, strokeWeight: 6, strokeColor: "#10B981",
+          path, strokeWeight: 6, strokeColor: "#2C8A57",
           strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
         });
         innerPl.setMap(mapInstance.current);
@@ -85,7 +85,7 @@ export default function CustomRouteDraw() {
       });
       outerPl.setMap(mapInstance.current);
       const innerPl = new kakao.maps.Polyline({
-        path, strokeWeight: 6, strokeColor: "#10B981",
+        path, strokeWeight: 6, strokeColor: "#2C8A57",
         strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
       });
       innerPl.setMap(mapInstance.current);

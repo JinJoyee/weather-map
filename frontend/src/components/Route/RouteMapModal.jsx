@@ -26,7 +26,7 @@ export default function RouteMapModal({ route, onClose }) {
     outerPl.setMap(map);
 
     const innerPl = new kakao.maps.Polyline({
-      path, strokeWeight: 6, strokeColor: "#10B981",
+      path, strokeWeight: 6, strokeColor: "#2C8A57",
       strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
     });
     innerPl.setMap(map);
