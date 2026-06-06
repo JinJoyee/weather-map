@@ -1,3 +1,6 @@
+# --- 디자인 핸드오프 (로컬 참고용, 공개 제외) ---
+design_handoff_weather_map/
+
 # --- OS 관련 (시스템 생성 파일) ---
 .DS_Store
 Thumbs.db
@@ -26,6 +29,10 @@ backend/.env
 # --- 데이터베이스 (SQLite) ---
 backend/*.db
 backend/*.sqlite3
+
+# --- 대용량 그래프 데이터 ---
+backend/data/*.graphml
+# backend/data/*.json 은 추적 (경량 전처리 결과물)
 
 # --- IDE 및 에디터 관련 ---
 .vscode/

@@ -125,3 +125,35 @@ def test_get_uv_index_fallback():
 
     result = asyncio.run(_run())
     assert result == 3
+
+
+def test_get_weather_with_temperature():
+    mock_http = _make_http_mock({
+        "response": {"body": {"items": {"item": [
+            {"category": "TMP", "fcstValue": "25.5"},
+        ]}}}
+    })
+    async def _run():
+        with patch("app.services.weather_service.get_uv_index", new=AsyncMock(return_value=3)), \
+             patch("httpx.AsyncClient") as MockClient:
+            MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_http)
+            MockClient.return_value.__aexit__ = AsyncMock(return_value=None)
+            return await get_weather(36.35, 127.38)
+    result = asyncio.run(_run())
+    assert result["temperature"] == 25.5
+
+
+def test_get_weather_with_invalid_temperature():
+    mock_http = _make_http_mock({
+        "response": {"body": {"items": {"item": [
+            {"category": "TMP", "fcstValue": "N/A"},
+        ]}}}
+    })
+    async def _run():
+        with patch("app.services.weather_service.get_uv_index", new=AsyncMock(return_value=3)), \
+             patch("httpx.AsyncClient") as MockClient:
+            MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_http)
+            MockClient.return_value.__aexit__ = AsyncMock(return_value=None)
+            return await get_weather(36.35, 127.38)
+    result = asyncio.run(_run())
+    assert result["temperature"] is None
