@@ -1,3 +1,6 @@
+# --- 디자인 핸드오프 (로컬 참고용, 공개 제외) ---
+design_handoff_weather_map/
+
 # --- OS 관련 (시스템 생성 파일) ---
 .DS_Store
 Thumbs.db
