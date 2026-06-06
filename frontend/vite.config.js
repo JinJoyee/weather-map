@@ -14,6 +14,17 @@ export default defineConfig({
     strictPort: true,
     fs: { allow: ['..'] },
   },
+  resolve: {
+    alias: {
+      'react': path.join(__dirname, 'node_modules/react'),
+      'react-dom': path.join(__dirname, 'node_modules/react-dom'),
+      'react-router-dom': path.join(__dirname, 'node_modules/react-router-dom'),
+      'react-router': path.join(__dirname, 'node_modules/react-router'),
+      '@testing-library/react': path.join(__dirname, 'node_modules/@testing-library/react'),
+      '@testing-library/jest-dom': path.join(__dirname, 'node_modules/@testing-library/jest-dom'),
+      '@testing-library/user-event': path.join(__dirname, 'node_modules/@testing-library/user-event'),
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

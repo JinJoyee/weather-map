@@ -2,13 +2,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 
-const { mockApiGet, mockGetToken } = vi.hoisted(() => ({
+const { mockApiGet, mockGetToken, mockApiDelete } = vi.hoisted(() => ({
   mockApiGet: vi.fn(),
   mockGetToken: vi.fn(),
+  mockApiDelete: vi.fn(),
 }));
 
 vi.mock('../frontend/src/api/client', () => ({
-  api: { get: mockApiGet, delete: vi.fn() },
+  api: { get: mockApiGet, delete: mockApiDelete },
 }));
 
 vi.mock('../frontend/src/api/auth', () => ({
@@ -25,6 +26,7 @@ function renderWithRouter(ui) {
 describe('RouteList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockApiDelete.mockResolvedValue({});
   });
 
   it('토큰 없을 때 로그인 안내를 표시한다', () => {
@@ -139,9 +141,6 @@ describe('RouteList', () => {
 
   it('삭제 성공 시 목록에서 항목이 제거된다', async () => {
     window.confirm = vi.fn(() => true);
-    const mockDelete = vi.fn().mockResolvedValue({});
-    const { api: mockApi } = (await import('../frontend/src/api/client'));
-    mockApi.delete = mockDelete;
     mockGetToken.mockReturnValue('fake-token');
     mockApiGet.mockResolvedValue({
       data: { routes: [{ id: 5, name: '삭제될경로', waypoints: [], created_at: '2026-01-01' }] },
@@ -154,10 +153,41 @@ describe('RouteList', () => {
     });
   });
 
+  it('삭제 실패 시 alert를 표시한다', async () => {
+    window.confirm = vi.fn(() => true);
+    window.alert = vi.fn();
+    mockApiDelete.mockRejectedValue({ response: { status: 500, data: {} } });
+    mockGetToken.mockReturnValue('fake-token');
+    mockApiGet.mockResolvedValue({
+      data: { routes: [{ id: 5, name: '삭제실패경로', waypoints: [], created_at: '2026-01-01' }] },
+    });
+    renderWithRouter(<RouteList />);
+    await screen.findByText('삭제실패경로');
+    fireEvent.click(screen.getByText('삭제'));
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalled();
+    });
+  });
+
+  it('"로그인하기" 버튼 클릭이 동작한다', () => {
+    mockGetToken.mockReturnValue(null);
+    renderWithRouter(<RouteList />);
+    const loginBtn = screen.getByRole('button', { name: /로그인/ });
+    fireEvent.click(loginBtn);
+  });
+
   it('"경로 그리러 가기" 버튼이 있다', async () => {
     mockGetToken.mockReturnValue('fake-token');
     mockApiGet.mockResolvedValue({ data: { routes: [] } });
     renderWithRouter(<RouteList />);
     expect(await screen.findByText('경로 그리러 가기')).toBeInTheDocument();
+  });
+
+  it('"경로 그리러 가기" 버튼 클릭이 동작한다', async () => {
+    mockGetToken.mockReturnValue('fake-token');
+    mockApiGet.mockResolvedValue({ data: { routes: [] } });
+    renderWithRouter(<RouteList />);
+    const btn = await screen.findByText('경로 그리러 가기');
+    fireEvent.click(btn);
   });
 });
