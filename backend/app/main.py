@@ -1,8 +1,12 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import weather, route, auth, custom_route
 from app.database import init_db
 from app.config import ALLOWED_ORIGINS
+from app.services.osm_router import _load_graph
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -18,6 +22,10 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    try:
+        _load_graph()
+    except Exception as e:
+        logger.warning("그래프 로드 실패 (서버 시작 계속): %s", e)
 
 app.include_router(weather.router)
 app.include_router(route.router)
