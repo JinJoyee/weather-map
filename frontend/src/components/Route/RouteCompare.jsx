@@ -291,7 +291,7 @@ export default function RouteCompare() {
         action={
           (startPos || endPos) && (
             <button onClick={handleReset}
-              className="border border-line bg-card rounded-[10px] px-3 py-1.5 text-[13px] font-semibold text-muted whitespace-nowrap">
+              className="border border-line dark:border-dark-line bg-card dark:bg-dark-card rounded-[10px] px-3 py-1.5 text-[13px] font-semibold text-muted dark:text-dark-muted whitespace-nowrap">
               새 탐색
             </button>
           )
@@ -368,15 +368,15 @@ export default function RouteCompare() {
               </div>
               {/* 커스텀 경로: 비어있으면 /draw로 유도 */}
               <div
-                className="flex items-center gap-3 p-4 bg-card rounded-card border border-line shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                className="flex items-center gap-3 p-4 bg-card dark:bg-dark-card rounded-card border border-line dark:border-dark-line shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => navigate("/draw")}
               >
-                <div className="w-10 h-10 rounded-xl bg-chip grid place-items-center shrink-0">
-                  <IconStar size={20} className="text-faint" />
+                <div className="w-10 h-10 rounded-xl bg-chip dark:bg-dark-chip grid place-items-center shrink-0">
+                  <IconStar size={20} className="text-faint dark:text-dark-faint" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[14px] font-bold text-ink">커스텀 경로</div>
-                  <div className="text-[12.5px] text-faint">직접 경로를 그려보세요 →</div>
+                  <div className="text-[14px] font-bold text-ink dark:text-dark-ink">커스텀 경로</div>
+                  <div className="text-[12.5px] text-faint dark:text-dark-faint">직접 경로를 그려보세요 →</div>
                 </div>
               </div>
             </div>
@@ -391,21 +391,21 @@ export default function RouteCompare() {
     <>
       {phase === "loading" && (
         <div className="absolute top-5 left-1/2 -translate-x-1/2">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-line text-[13px] font-bold text-ink whitespace-nowrap">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card dark:bg-dark-card shadow-md border border-line dark:border-dark-line text-[13px] font-bold text-ink dark:text-dark-ink whitespace-nowrap">
             <Spinner size={16} /> 경로 계산 중 <Dots />
           </div>
         </div>
       )}
       {phase === "idle" && !startPos && (
         <div className="absolute top-5 left-1/2 -translate-x-1/2 pointer-events-none">
-          <div className="px-4 py-2 rounded-full bg-card shadow-md border border-line text-[13px] font-semibold text-ink whitespace-nowrap">
+          <div className="px-4 py-2 rounded-full bg-card dark:bg-dark-card shadow-md border border-line dark:border-dark-line text-[13px] font-semibold text-ink dark:text-dark-ink whitespace-nowrap">
             📍 출발지를 지도에서 클릭하세요
           </div>
         </div>
       )}
       {phase === "idle" && startPos && !endPos && (
         <div className="absolute top-5 left-1/2 -translate-x-1/2 pointer-events-none">
-          <div className="px-4 py-2 rounded-full bg-card shadow-md border border-line text-[13px] font-semibold text-ink whitespace-nowrap">
+          <div className="px-4 py-2 rounded-full bg-card dark:bg-dark-card shadow-md border border-line dark:border-dark-line text-[13px] font-semibold text-ink dark:text-dark-ink whitespace-nowrap">
             🏁 도착지를 지도에서 클릭하세요
           </div>
         </div>
@@ -420,8 +420,8 @@ export default function RouteCompare() {
 
   const sheetHeader = (
     <div className="flex items-center gap-2">
-      <h1 className="m-0 text-[20px] font-extrabold text-ink tracking-[-0.02em]">경로 비교</h1>
-      <span className="text-[13px] text-faint">
+      <h1 className="m-0 text-[20px] font-extrabold text-ink dark:text-dark-ink tracking-[-0.02em]">경로 비교</h1>
+      <span className="text-[13px] text-faint dark:text-dark-faint">
         {phase === "loading" ? "계산 중" : phase === "ready" ? "2개 추천" : ""}
       </span>
     </div>
