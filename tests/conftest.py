@@ -7,3 +7,10 @@ sys.path.insert(0, os.path.abspath(BACKEND_DIR))
 
 # SQLite DB 등 상대 경로가 backend/ 기준으로 동작하도록 작업 디렉토리 변경
 os.chdir(os.path.abspath(BACKEND_DIR))
+
+# 매 테스트 세션마다 DB를 새로 생성해 clean state 보장
+if os.path.exists("app.db"):
+    os.remove("app.db")
+
+from app.database import init_db
+init_db()
