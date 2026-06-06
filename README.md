@@ -19,11 +19,13 @@
 |---|---|---|
 | [fastapi](https://github.com/fastapi/fastapi) | 0.135.3 | 웹 프레임워크 |
 | [uvicorn](https://github.com/encode/uvicorn) | 0.44.0 | ASGI 서버 |
-| [httpx](https://github.com/encode/httpx) | 0.28.1 | 기상청 API HTTP 클라이언트 |
+| [httpx](https://github.com/encode/httpx) | 0.28.1 | 기상청/카카오/T맵 API HTTP 클라이언트 |
 | [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) | 2.0.49 | ORM |
 | [pydantic](https://github.com/pydantic/pydantic) | 2.12.5 | 데이터 검증 |
 | [python-jose](https://github.com/mpdavis/python-jose) | 3.5.0 | JWT 토큰 처리 |
+| [bcrypt](https://github.com/pyca/bcrypt) | 5.0.0 | 비밀번호 해싱 |
 | [python-dotenv](https://github.com/theskumar/python-dotenv) | 1.2.2 | 환경변수 관리 |
+| [pytest](https://github.com/pytest-dev/pytest) | 9.0.3 | 단위 테스트 |
 
 전체 의존성: `backend/requirements.txt` 참조
 
@@ -40,67 +42,84 @@
 
 ---
 
-## 실행 방법
+## 설치 방법
 
-### 백엔드
+### 저장소 클론
+
+```bash
+git clone https://github.com/JinJoyee/weather-map.git
+cd weather-map
+```
+
+### 백엔드 설치
 
 ```bash
 cd backend
 
-# 가상환경 생성
+# 가상환경 생성 및 활성화
 python -m venv venv
-
-# 가상환경 활성화
 source venv/bin/activate      # Linux / Mac
+venv\Scripts\activate         # Windows CMD
+.\venv\Scripts\Activate.ps1   # Windows PowerShell
 
-# Windows CMD
-venv\Scripts\activate
-# Windows PowerShell (처음 실행 시 아래 명령어 먼저 실행 필요)
-# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-.\venv\Scripts\Activate.ps1
-
-# 패키지 설치
+# 패키지 설치 (pytest 포함)
 pip install -r requirements.txt
 
 # 환경변수 설정
 cp .env.example .env        # Linux / Mac
 copy .env.example .env      # Windows
 # .env 파일을 열어 API 키 입력
+```
 
-# 서버 실행
+### 프론트엔드 설치
+
+```bash
+cd frontend
+npm install
+
+# 환경변수 설정
+cp .env.example .env        # Linux / Mac
+copy .env.example .env      # Windows
+```
+
+---
+
+## 실행 방법
+
+### 백엔드 서버 실행
+
+```bash
+cd backend
+source venv/bin/activate      # Linux / Mac
+venv\Scripts\activate         # Windows
+
 uvicorn app.main:app --reload
 ```
 
 서버 주소: `http://localhost:8000`  
 API 문서: `http://localhost:8000/docs`
 
-### 프론트엔드
+### 프론트엔드 개발 서버 실행
 
 ```bash
 cd frontend
-
-# 패키지 설치
-npm install
-
-# 환경변수 설정
-cp .env.example .env
-# .env 파일을 열어 값 확인 (기본값: http://localhost:8000)
-
-# 개발 서버 실행
 npm run dev
 ```
 
+앱 주소: `http://localhost:5173`
+
 ### Unit Test 실행
+
+클론 직후 아래 순서로 실행합니다.
 
 ```bash
 cd backend
 
-# 가상환경 활성화
+# 가상환경 생성 및 패키지 설치 (최초 1회)
+python -m venv venv
 source venv/bin/activate      # Linux / Mac
 venv\Scripts\activate         # Windows
-
-# 테스트 의존성 설치 (최초 1회)
-pip install pytest httpx
+pip install -r requirements.txt
 
 # 테스트 실행
 python -m pytest tests/ -v
@@ -108,10 +127,12 @@ python -m pytest tests/ -v
 
 예상 출력:
 ```
-tests/test_main.py::test_root PASSED
-tests/test_main.py::test_weather_endpoint_requires_params PASSED
-tests/test_main.py::test_route_endpoint_requires_params PASSED
-3 passed
+tests/test_auth.py::test_login_success PASSED
+tests/test_auth.py::test_login_wrong_password PASSED
+...
+tests/test_weather.py::test_get_weather_with_invalid_temperature PASSED
+
+106 passed, 3 warnings
 ```
 
 ---
@@ -130,6 +151,19 @@ tests/test_main.py::test_route_endpoint_requires_params PASSED
 1. [kakao developers](https://developers.kakao.com) 로그인
 2. 애플리케이션 추가 후 REST API 키 복사
 3. `backend/.env`의 `KAKAO_REST_API_KEY`에 입력
+4. 플랫폼 → Web → 사이트 도메인에 `http://localhost:5173` 추가
+
+### UV 지수 API (Open-Meteo)
+
+1. [open-meteo.com](https://open-meteo.com) 회원가입
+2. API Keys 발급
+3. `backend/.env`의 `UV_API_KEY`에 입력
+
+### T맵 도보 API
+
+1. [tmap developers](https://developers.tmap.com) 로그인
+2. 앱 등록 후 App Key 복사
+3. `backend/.env`의 `TMAP_APP_KEY`에 입력
 
 ---
 
@@ -159,6 +193,16 @@ weather-map/
 |---|---|---|
 | GET | `/api/weather/current` | 현재 날씨 조회 |
 | GET | `/api/route/recommend` | 상황 인식 경로 추천 |
+
+---
+
+## 데이터 출처 및 저작권
+
+이 프로젝트는 **OpenStreetMap** 데이터를 사용하여 대전 보행자 경로 그래프를 구성합니다.
+
+- 지도 데이터: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
+- 데이터 라이선스: [ODbL (Open Database License)](https://opendatacommons.org/licenses/odbl/)
+- OSM 기여 가이드: [Ko:첫 걸음](https://wiki.openstreetmap.org/wiki/Ko:%EC%B2%AB_%EA%B1%B8%EC%9D%8C)
 
 ---
 
