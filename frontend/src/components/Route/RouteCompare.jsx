@@ -125,7 +125,7 @@ export default function RouteCompare() {
   const [weather, setWeather] = useState(null);
   const [phase, setPhase] = useState("idle"); // idle|loading|ready|empty|error
   const [selectedRoute, setSelectedRoute] = useState(null);
-  const [mode, setMode] = useState("car");
+  const [modes, setModes] = useState({ normal: "car", context: "walk" });
 
   const navigate = useNavigate();
 
@@ -207,7 +207,7 @@ export default function RouteCompare() {
     const pathMap = {};
 
     Object.keys(ROUTE_COLORS).forEach((key) => {
-      const polylineData = getActivePolyline(routes, key, mode);
+      const polylineData = getActivePolyline(routes, key, modes[key]);
       if (!polylineData?.length) return;
       const path = polylineData.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
       path.forEach((p) => bounds.extend(p));
@@ -233,7 +233,7 @@ export default function RouteCompare() {
       bounds.extend(new kakao.maps.LatLng(endPos.lat, endPos.lng));
       mapInstance.current.setBounds(bounds);
     }
-  }, [routes, mode, selectedRoute]);
+  }, [routes, modes, selectedRoute]);
 
   const handleReset = () => {
     if (startMarkerRef.current) startMarkerRef.current.setMap(null);
@@ -265,9 +265,6 @@ export default function RouteCompare() {
 
   const originLabel = startPos ? `${startPos.lat.toFixed(4)}, ${startPos.lng.toFixed(4)}` : "출발지 선택";
   const destLabel   = endPos   ? `${endPos.lat.toFixed(4)}, ${endPos.lng.toFixed(4)}`   : "도착지 선택";
-
-  // context 경로는 자동차 모드 불가 → walk로 폴백
-  const contextMode = mode === "car" ? "walk" : mode;
 
   // ── 패널 콘텐츠 ─────────────────────────────────────────────────────────
   const panel = (
@@ -334,27 +331,31 @@ export default function RouteCompare() {
               </div>
             )}
 
-            <SegMode mode={mode} setMode={setMode} />
-
             <div className="flex flex-col gap-3 pb-6">
-              <RouteCard
-                tone="weather" Icon={IconSun} title="날씨 최적 경로" recommended
-                description={routes?.context?.description || "날씨 맞춤 · 쾌적한 경로"}
-                eta={calcTravelTime(routes?.context, contextMode)}
-                distance={formatDistance(routes?.context, contextMode)}
-                selected={selectedRoute === "context"}
-                onSelect={() => handleSelectRoute("context")}
-                onNavigate={openKakaoNavi}
-              />
-              <RouteCard
-                tone="primary" Icon={IconClock} title="최단 경로"
-                description={routes?.normal?.description || "시간 최단 · 카카오 내비"}
-                eta={calcTravelTime(routes?.normal, mode)}
-                distance={formatDistance(routes?.normal, mode)}
-                selected={selectedRoute === "normal"}
-                onSelect={() => handleSelectRoute("normal")}
-                onNavigate={openKakaoNavi}
-              />
+              <div>
+                <SegMode mode={modes.context} setMode={(m) => setModes(prev => ({ ...prev, context: m }))} />
+                <RouteCard
+                  tone="weather" Icon={IconSun} title="날씨 최적 경로" recommended
+                  description={routes?.context?.description || "날씨 맞춤 · 쾌적한 경로"}
+                  eta={calcTravelTime(routes?.context, modes.context)}
+                  distance={formatDistance(routes?.context, modes.context)}
+                  selected={selectedRoute === "context"}
+                  onSelect={() => handleSelectRoute("context")}
+                  onNavigate={openKakaoNavi}
+                />
+              </div>
+              <div>
+                <SegMode mode={modes.normal} setMode={(m) => setModes(prev => ({ ...prev, normal: m }))} />
+                <RouteCard
+                  tone="primary" Icon={IconClock} title="최단 경로"
+                  description={routes?.normal?.description || "시간 최단 · 카카오 내비"}
+                  eta={calcTravelTime(routes?.normal, modes.normal)}
+                  distance={formatDistance(routes?.normal, modes.normal)}
+                  selected={selectedRoute === "normal"}
+                  onSelect={() => handleSelectRoute("normal")}
+                  onNavigate={openKakaoNavi}
+                />
+              </div>
               {/* 커스텀 경로: 비어있으면 /draw로 유도 */}
               <div
                 className="flex items-center gap-3 p-4 bg-card rounded-card border border-line shadow-sm cursor-pointer hover:shadow-md transition-shadow"
