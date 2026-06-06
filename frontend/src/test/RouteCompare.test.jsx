@@ -27,4 +27,19 @@ describe('RouteCompare', () => {
     expect(screen.queryByText('최단 경로')).not.toBeInTheDocument();
     expect(screen.queryByText('날씨 최적 경로')).not.toBeInTheDocument();
   });
+
+  it('ODPill에 "출발지 선택" 플레이스홀더가 표시된다', () => {
+    renderWithRouter(<RouteCompare />);
+    expect(screen.getByText('출발지 선택')).toBeInTheDocument();
+  });
+
+  it('ODPill에 "도착지 선택" 플레이스홀더가 표시된다', () => {
+    renderWithRouter(<RouteCompare />);
+    expect(screen.getByText('도착지 선택')).toBeInTheDocument();
+  });
+
+  it('"새 탐색" 버튼이 초기에 표시되지 않는다', () => {
+    renderWithRouter(<RouteCompare />);
+    expect(screen.queryByText('새 탐색')).not.toBeInTheDocument();
+  });
 });
