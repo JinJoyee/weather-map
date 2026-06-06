@@ -25,6 +25,9 @@ Object.defineProperty(window, 'kakao', {
         this.extend = vi.fn();
         this.isEmpty = vi.fn(() => false);
       }),
+      CustomOverlay: vi.fn().mockImplementation(function () {
+        this.setMap = vi.fn();
+      }),
       event: {
         addListener: vi.fn(),
         removeListener: vi.fn(),
