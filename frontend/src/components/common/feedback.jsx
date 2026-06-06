@@ -39,7 +39,7 @@ export function Skeleton({ className = "", style }) {
 
 export function SkeletonRouteCard() {
   return (
-    <div className="bg-card rounded-card border border-line overflow-hidden shadow-sm">
+    <div data-testid="skeleton-route-card" className="bg-card rounded-card border border-line overflow-hidden shadow-sm">
       <Skeleton className="w-full h-[3px] rounded-none" />
       <div className="p-[15px]">
         <div className="flex items-center gap-[9px] mb-3">

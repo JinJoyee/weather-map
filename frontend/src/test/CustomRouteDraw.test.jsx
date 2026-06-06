@@ -31,8 +31,8 @@ describe('CustomRouteDraw', () => {
     expect(screen.getByText('경로 저장')).toBeDisabled();
   });
 
-  it('"저장된 경로 보기" 링크를 표시한다', () => {
+  it('"저장된 경로" 링크를 표시한다', () => {
     renderWithRouter(<CustomRouteDraw />);
-    expect(screen.getByText(/저장된 경로 보기/)).toBeInTheDocument();
+    expect(screen.getByText(/저장된 경로/)).toBeInTheDocument();
   });
 });

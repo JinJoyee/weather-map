@@ -29,19 +29,19 @@ describe('RouteList', () => {
   it('토큰 없을 때 로그인 안내를 표시한다', () => {
     mockGetToken.mockReturnValue(null);
     renderWithRouter(<RouteList />);
-    expect(screen.getByText('로그인이 필요합니다.')).toBeInTheDocument();
+    expect(screen.getByText('로그인이 필요해요')).toBeInTheDocument();
   });
 
-  it('토큰 없을 때 로그인 링크를 표시한다', () => {
+  it('토큰 없을 때 로그인 버튼을 표시한다', () => {
     mockGetToken.mockReturnValue(null);
     renderWithRouter(<RouteList />);
-    expect(screen.getByRole('link', { name: /로그인/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /로그인/ })).toBeInTheDocument();
   });
 
   it('토큰 있을 때 로딩 상태를 표시한다', () => {
     mockGetToken.mockReturnValue('fake-token');
     mockApiGet.mockReturnValue(new Promise(() => {}));
     renderWithRouter(<RouteList />);
-    expect(screen.getByText('불러오는 중...')).toBeInTheDocument();
+    expect(screen.getAllByTestId('skeleton-route-card').length).toBeGreaterThan(0);
   });
 });
