@@ -39,13 +39,15 @@ function App() {
       <Route
         path="*"
         element={
-          <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
-            <div className="bg-card rounded-card shadow-md border border-line p-8 max-w-md w-full text-center">
-              <h2 className="text-3xl font-bold text-secondary mb-3">404</h2>
-              <p className="text-muted mb-8">페이지를 찾을 수 없습니다.</p>
+          <div className="min-h-screen bg-bg dark:bg-dark-bg flex flex-col items-center justify-center px-6">
+            <div className="bg-card dark:bg-dark-card rounded-card shadow-md
+                            border border-line dark:border-dark-line p-8 max-w-md w-full text-center">
+              <h2 className="text-3xl font-bold text-secondary dark:text-blue-400 mb-3">404</h2>
+              <p className="text-muted dark:text-dark-muted mb-8">페이지를 찾을 수 없습니다.</p>
               <button
                 onClick={() => navigate('/map')}
-                className="w-full bg-cta text-white py-3 rounded-lvl2 font-bold hover:opacity-90 transition-all"
+                className="w-full bg-cta text-white py-3 rounded-lvl2 font-bold
+                          hover:opacity-90 transition-all"
               >
                 홈으로 돌아가기
               </button>
