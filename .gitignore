@@ -7,6 +7,7 @@ Thumbs.db
 
 # --- 프론트엔드 (frontend/ 관련) ---
 frontend/node_modules/
+frontend_test/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
