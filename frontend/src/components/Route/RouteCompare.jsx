@@ -8,13 +8,30 @@ import { Spinner, Dots, SkeletonRouteCard, StateView } from "../common/feedback"
 import { IconClock, IconSun, IconStar, IconWifiOff, IconMapOff, IconChevR } from "../common/icons";
 
 // ── 유틸 (기존 로직 100% 유지) ──────────────────────────────────────────────
-function calcTravelTime(route, mode) {
+function calcTravelTime(route, mode, key) {
   if (!route) return null;
   const footDist = route.foot_distance ?? route.distance;
   if (mode === "walk") return footDist != null ? Math.ceil(footDist / 67)  : null;
   if (mode === "bike") return footDist != null ? Math.ceil(footDist / 250) : null;
-  if (mode === "car")  return route.duration  != null ? Math.ceil(route.duration / 60) : null;
+  if (mode === "car") {
+    // normal 경로만 카카오 API의 실제 자동차 duration 사용
+    // context 경로의 duration은 도보 기반이므로 거리로 추정 (~24km/h 도심 속도)
+    if (key === "normal" && route.duration != null) return Math.ceil(route.duration / 60);
+    const dist = route.distance ?? route.foot_distance;
+    return dist != null ? Math.ceil(dist / 400) : null;
+  }
   return null;
+}
+
+function routeDesc(key, mode) {
+  if (key === "context") {
+    if (mode === "walk") return "날씨 맞춤 · 그늘길 도보";
+    if (mode === "bike") return "날씨 맞춤 · 그늘길 자전거";
+    return "날씨 맞춤 · 그늘길 자동차";
+  }
+  if (mode === "walk") return "도보 최단 경로";
+  if (mode === "bike") return "자전거 최단 경로";
+  return "시간 최단 · 카카오 내비";
 }
 
 function formatDistance(route, mode) {
@@ -346,8 +363,8 @@ export default function RouteCompare() {
                 <SegMode mode={modes.context} setMode={(m) => setModes(prev => ({ ...prev, context: m }))} />
                 <RouteCard
                   tone="weather" Icon={IconSun} title="날씨 최적 경로" recommended
-                  description={routes?.context?.description || "날씨 맞춤 · 쾌적한 경로"}
-                  eta={calcTravelTime(routes?.context, modes.context)}
+                  description={routeDesc("context", modes.context)}
+                  eta={calcTravelTime(routes?.context, modes.context, "context")}
                   distance={formatDistance(routes?.context, modes.context)}
                   selected={selectedRoute === "context"}
                   onSelect={() => handleSelectRoute("context")}
@@ -358,8 +375,8 @@ export default function RouteCompare() {
                 <SegMode mode={modes.normal} setMode={(m) => setModes(prev => ({ ...prev, normal: m }))} />
                 <RouteCard
                   tone="primary" Icon={IconClock} title="최단 경로"
-                  description={routes?.normal?.description || "시간 최단 · 카카오 내비"}
-                  eta={calcTravelTime(routes?.normal, modes.normal)}
+                  description={routeDesc("normal", modes.normal)}
+                  eta={calcTravelTime(routes?.normal, modes.normal, "normal")}
                   distance={formatDistance(routes?.normal, modes.normal)}
                   selected={selectedRoute === "normal"}
                   onSelect={() => handleSelectRoute("normal")}

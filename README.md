@@ -110,18 +110,23 @@ npm run dev
 
 ### Unit Test 실행
 
-클론 직후 아래 순서로 실행합니다.
+테스트는 **저장소 루트**에서 실행합니다. 클론 직후 아래 순서로 실행합니다.
 
 ```bash
-cd backend
+# 저장소 루트(weather-map/)에서 실행
+cd weather-map
 
 # 가상환경 생성 및 패키지 설치 (최초 1회)
+cd backend
 python -m venv venv
 source venv/bin/activate      # Linux / Mac
 venv\Scripts\activate         # Windows
 pip install -r requirements.txt
+cd ..
 
-# 테스트 실행
+# 테스트 실행 (루트에서)
+source backend/venv/bin/activate      # Linux / Mac
+backend\venv\Scripts\activate         # Windows
 python -m pytest tests/ -v
 ```
 
