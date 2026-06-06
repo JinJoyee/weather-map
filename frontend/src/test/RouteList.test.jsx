@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
+import { ThemeProvider } from '../context/ThemeContext';
 
 const { mockApiGet, mockGetToken } = vi.hoisted(() => ({
   mockApiGet: vi.fn(),
@@ -18,7 +19,7 @@ vi.mock('../api/auth', () => ({
 import RouteList from '../components/Route/RouteList';
 
 function renderWithRouter(ui) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  return render(<ThemeProvider><MemoryRouter>{ui}</MemoryRouter></ThemeProvider>);
 }
 
 describe('RouteList', () => {

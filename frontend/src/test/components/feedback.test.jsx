@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect } from 'vitest';
 import { Spinner, SkeletonRouteCard, StateView } from '../../components/common/feedback';
+import { ThemeProvider } from '../../context/ThemeContext';
 
 describe('feedback 컴포넌트', () => {
   it('Spinner가 SVG로 렌더링된다', () => {
@@ -10,7 +11,7 @@ describe('feedback 컴포넌트', () => {
   });
 
   it('SkeletonRouteCard가 data-testid="skeleton-route-card"를 가진다', () => {
-    render(<SkeletonRouteCard />);
+    render(<ThemeProvider><SkeletonRouteCard /></ThemeProvider>);
     expect(screen.getByTestId('skeleton-route-card')).toBeInTheDocument();
   });
 

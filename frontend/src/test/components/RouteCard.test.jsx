@@ -25,19 +25,19 @@ describe('RouteCard', () => {
     expect(screen.getByText('테스트 설명')).toBeInTheDocument();
   });
 
-  it('eta가 있으면 "15분"을 표시한다', () => {
+  it('eta가 있으면 "약 15분"을 표시한다', () => {
     render(<RouteCard {...baseProps} />);
-    expect(screen.getByText('15분')).toBeInTheDocument();
+    expect(screen.getByText('약 15분')).toBeInTheDocument();
   });
 
-  it('selected=false 시 "이 경로 선택" 버튼을 표시한다', () => {
-    render(<RouteCard {...baseProps} selected={false} />);
-    expect(screen.getByText('이 경로 선택')).toBeInTheDocument();
+  it('selected=false 시 선택 링 스타일이 없다', () => {
+    const { container } = render(<RouteCard {...baseProps} selected={false} />);
+    expect(container.firstChild.className).not.toContain('ring-2');
   });
 
-  it('selected=true 시 "선택됨" 버튼을 표시한다', () => {
-    render(<RouteCard {...baseProps} selected />);
-    expect(screen.getByText('선택됨')).toBeInTheDocument();
+  it('selected=true 시 선택 링 스타일이 적용된다', () => {
+    const { container } = render(<RouteCard {...baseProps} selected />);
+    expect(container.firstChild.className).toContain('ring-2');
   });
 
   it('recommended=true 시 "추천" 배지를 표시한다', () => {
@@ -45,8 +45,8 @@ describe('RouteCard', () => {
     expect(screen.getByText('추천')).toBeInTheDocument();
   });
 
-  it('eta=null 시 "이 이동수단은 지원하지 않아요"를 표시한다', () => {
+  it('eta=null 시 소요시간이 표시되지 않는다', () => {
     render(<RouteCard {...baseProps} eta={null} />);
-    expect(screen.getByText('이 이동수단은 지원하지 않아요')).toBeInTheDocument();
+    expect(screen.queryByText(/약.*분/)).not.toBeInTheDocument();
   });
 });
