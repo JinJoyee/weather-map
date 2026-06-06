@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { getToken } from "../../api/auth";
+import MapScreenScaffold from "../../layout/MapScreenScaffold";
 
 const DEFAULT_CENTER = { lat: 36.3504, lng: 127.3845 };
 
@@ -45,15 +46,9 @@ export default function CustomRouteDraw() {
       }
       if (newPoints.length >= 2) {
         const path = newPoints.map((p) => new k.maps.LatLng(p.lat, p.lng));
-        const outerPl = new k.maps.Polyline({
-          path, strokeWeight: 10, strokeColor: "#FFFFFF",
-          strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
-        });
+        const outerPl = new k.maps.Polyline({ path, strokeWeight: 10, strokeColor: "#FFFFFF", strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true });
         outerPl.setMap(mapInstance.current);
-        const innerPl = new k.maps.Polyline({
-          path, strokeWeight: 6, strokeColor: "#2C8A57",
-          strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
-        });
+        const innerPl = new k.maps.Polyline({ path, strokeWeight: 6, strokeColor: "#2C8A57", strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true });
         innerPl.setMap(mapInstance.current);
         polylineRef.current = { outer: outerPl, inner: innerPl };
       }
@@ -62,32 +57,18 @@ export default function CustomRouteDraw() {
 
   const handleUndo = () => {
     if (pointsRef.current.length === 0) return;
-
     const lastMarker = markersRef.current.pop();
     if (lastMarker) lastMarker.setMap(null);
-
-    if (polylineRef.current) {
-      polylineRef.current.outer.setMap(null);
-      polylineRef.current.inner.setMap(null);
-      polylineRef.current = null;
-    }
-
+    if (polylineRef.current) { polylineRef.current.outer.setMap(null); polylineRef.current.inner.setMap(null); polylineRef.current = null; }
     const newPoints = pointsRef.current.slice(0, -1);
     pointsRef.current = newPoints;
     setPoints([...newPoints]);
-
     const { kakao } = window;
     if (newPoints.length >= 2 && kakao) {
       const path = newPoints.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
-      const outerPl = new kakao.maps.Polyline({
-        path, strokeWeight: 10, strokeColor: "#FFFFFF",
-        strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
-      });
+      const outerPl = new kakao.maps.Polyline({ path, strokeWeight: 10, strokeColor: "#FFFFFF", strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true });
       outerPl.setMap(mapInstance.current);
-      const innerPl = new kakao.maps.Polyline({
-        path, strokeWeight: 6, strokeColor: "#2C8A57",
-        strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true,
-      });
+      const innerPl = new kakao.maps.Polyline({ path, strokeWeight: 6, strokeColor: "#2C8A57", strokeOpacity: 0.9, strokeStyle: "solid", endArrow: true });
       innerPl.setMap(mapInstance.current);
       polylineRef.current = { outer: outerPl, inner: innerPl };
     }
@@ -96,11 +77,7 @@ export default function CustomRouteDraw() {
   const handleClear = () => {
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
-    if (polylineRef.current) {
-      polylineRef.current.outer.setMap(null);
-      polylineRef.current.inner.setMap(null);
-      polylineRef.current = null;
-    }
+    if (polylineRef.current) { polylineRef.current.outer.setMap(null); polylineRef.current.inner.setMap(null); polylineRef.current = null; }
     pointsRef.current = [];
     setPoints([]);
   };
@@ -109,16 +86,12 @@ export default function CustomRouteDraw() {
     if (points.length < 2) return setError("최소 2개 이상의 지점을 클릭하세요.");
     if (!name.trim()) return setError("경로 이름을 입력하세요.");
     if (!getToken()) return setError("로그인이 필요합니다.");
-
-    setSaving(true);
-    setError("");
+    setSaving(true); setError("");
     try {
       await api.post("/api/routes/custom", {
         name: name.trim(),
-        start_lat: points[0].lat,
-        start_lng: points[0].lng,
-        end_lat: points[points.length - 1].lat,
-        end_lng: points[points.length - 1].lng,
+        start_lat: points[0].lat, start_lng: points[0].lng,
+        end_lat: points[points.length - 1].lat, end_lng: points[points.length - 1].lng,
         waypoints: points.slice(1, -1),
         is_public: isPublic,
       });
@@ -131,69 +104,64 @@ export default function CustomRouteDraw() {
   };
 
   const instruction =
-    points.length === 0
-      ? "지도를 클릭해 출발지를 설정하세요"
-      : points.length === 1
-      ? "다음 지점을 클릭하세요 (계속 클릭해 경유지 추가)"
-      : `${points.length}개 지점 설정됨 · 마지막 클릭이 도착지`;
+    points.length === 0 ? "지도를 클릭해 출발지를 설정하세요"
+    : points.length === 1 ? "다음 지점을 클릭하세요 (계속 클릭해 경유지 추가)"
+    : `${points.length}개 지점 설정됨 · 마지막 클릭이 도착지`;
 
-  return (
-    <div className="flex flex-col h-screen">
-      <div className="relative w-full" style={{ height: "60vh" }}>
-        <div ref={mapRef} className="w-full h-full" />
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-white/95 rounded-lg px-4 py-2 shadow-md text-sm font-semibold text-gray-700 whitespace-nowrap pointer-events-none">
-          {instruction}
-        </div>
+  const panel = (
+    <div className="p-5 flex flex-col gap-4">
+      <h2 className="text-[17px] font-extrabold text-ink">경로 그리기</h2>
+
+      <div className="flex items-center gap-2">
+        <button onClick={handleUndo} disabled={points.length === 0}
+          className="px-3 py-1.5 text-sm rounded-lvl2 border border-line text-muted hover:bg-bg disabled:opacity-40 transition">
+          되돌리기
+        </button>
+        <button onClick={handleClear} disabled={points.length === 0}
+          className="px-3 py-1.5 text-sm rounded-lvl2 border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-40 transition">
+          초기화
+        </button>
+        <Link to="/custom" className="ml-auto text-sm text-faint hover:text-muted transition">
+          저장된 경로 →
+        </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 bg-white">
-        <div className="flex items-center gap-2 mb-4">
-          <button
-            onClick={handleUndo}
-            disabled={points.length === 0}
-            className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40"
-          >
-            되돌리기
-          </button>
-          <button
-            onClick={handleClear}
-            disabled={points.length === 0}
-            className="px-3 py-1.5 text-sm rounded border border-red-300 text-red-500 hover:bg-red-50 disabled:opacity-40"
-          >
-            초기화
-          </button>
-          <Link to="/custom" className="ml-auto text-sm text-gray-400 hover:text-gray-600">
-            저장된 경로 보기 →
-          </Link>
-        </div>
+      <input
+        type="text"
+        placeholder="경로 이름을 입력하세요"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="w-full border border-line rounded-lvl2 px-3 py-2.5 text-sm bg-card focus:outline-none focus:border-primary text-ink placeholder:text-faint"
+      />
 
-        <input
-          type="text"
-          placeholder="경로 이름을 입력하세요"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-3 focus:outline-none focus:border-primary"
-        />
+      <label className="flex items-center gap-2 text-sm text-muted cursor-pointer select-none">
+        <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+        공개 경로로 저장
+      </label>
 
-        <label className="flex items-center gap-2 text-sm mb-4 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={isPublic}
-            onChange={(e) => setIsPublic(e.target.checked)}
-          />
-          공개 경로로 저장
-        </label>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+      <button
+        onClick={handleSave}
+        disabled={saving || points.length < 2}
+        className="w-full bg-cta text-white py-3 rounded-card font-bold hover:opacity-90 disabled:opacity-40 transition-all"
+      >
+        {saving ? "저장 중..." : "경로 저장"}
+      </button>
+    </div>
+  );
 
-        <button
-          onClick={handleSave}
-          disabled={saving || points.length < 2}
-          className="w-full bg-primary text-white py-2.5 rounded-lg font-bold hover:opacity-90 disabled:opacity-40 transition-all"
-        >
-          {saving ? "저장 중..." : "경로 저장"}
-        </button>
+  const map = (
+    <div className="absolute top-5 left-1/2 -translate-x-1/2 pointer-events-none">
+      <div className="px-4 py-2 rounded-full bg-card shadow-md border border-line text-[13px] font-semibold text-ink whitespace-nowrap">
+        {instruction}
       </div>
     </div>
   );
+
+  const sheetHeader = (
+    <h1 className="m-0 text-[20px] font-extrabold text-ink tracking-[-0.02em]">경로 그리기</h1>
+  );
+
+  return <MapScreenScaffold mapRef={mapRef} panel={panel} map={map} sheetHeader={sheetHeader} />;
 }
