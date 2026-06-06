@@ -6,10 +6,13 @@
 
 @layer base {
   body {
-    @apply font-sans bg-bg dark:bg-dark-bg text-ink dark:text-dark-ink min-h-screen m-0;
+    @apply font-sans bg-bg text-ink min-h-screen m-0;
     word-break: keep-all;
     line-break: strict;
     -webkit-font-smoothing: antialiased;
+  }
+  .dark body {
+    @apply bg-dark-bg text-dark-ink;
   }
   h1, h2, h3, h4, h5, h6 { @apply tracking-tight; }
 }
