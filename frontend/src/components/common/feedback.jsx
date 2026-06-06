@@ -1,5 +1,6 @@
 // common/feedback.jsx — Spinner, Dots, Skeleton, SkeletonRouteCard, StateView.
 import React from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 export function Spinner({ size = 22, className = "text-primary", strokeWidth = 2.6 }) {
   return (
@@ -24,12 +25,14 @@ export function Dots({ className = "bg-primary" }) {
 
 // Shimmer placeholder. Width/height via style or className.
 export function Skeleton({ className = "", style }) {
+  const { theme } = useTheme();
   return (
     <span
-      className={`block bg-chip animate-shimmer ${className}`}
+      className={`block animate-shimmer ${className}`}
       style={{
-        backgroundImage:
-          "linear-gradient(100deg, #EEEAE0 30%, #f7f4ec 50%, #EEEAE0 70%)",
+        backgroundImage: theme === "dark"
+          ? "linear-gradient(100deg, #273449 30%, #334155 50%, #273449 70%)"
+          : "linear-gradient(100deg, #EEEAE0 30%, #f7f4ec 50%, #EEEAE0 70%)",
         backgroundSize: "200% 100%",
         ...style,
       }}
@@ -39,7 +42,7 @@ export function Skeleton({ className = "", style }) {
 
 export function SkeletonRouteCard() {
   return (
-    <div data-testid="skeleton-route-card" className="bg-card rounded-card border border-line overflow-hidden shadow-sm">
+    <div data-testid="skeleton-route-card" className="bg-card dark:bg-dark-card rounded-card border border-line dark:border-dark-line overflow-hidden shadow-sm">
       <Skeleton className="w-full h-[3px] rounded-none" />
       <div className="p-[15px]">
         <div className="flex items-center gap-[9px] mb-3">
@@ -71,8 +74,8 @@ export function StateView({ Icon, tone = "neutral", title, desc, primary, onPrim
       <div className={`w-16 h-16 rounded-[20px] mb-[18px] grid place-items-center ${TONES[tone]}`}>
         {Icon && <Icon size={30} />}
       </div>
-      <h2 className="m-0 mb-2 text-[19px] font-extrabold text-ink tracking-[-0.02em]">{title}</h2>
-      {desc && <p className="m-0 text-sm text-muted leading-relaxed">{desc}</p>}
+      <h2 className="m-0 mb-2 text-[19px] font-extrabold text-ink dark:text-dark-ink tracking-[-0.02em]">{title}</h2>
+      {desc && <p className="m-0 text-sm text-muted dark:text-dark-muted leading-relaxed">{desc}</p>}
       {(primary || secondary) && (
         <div className="flex flex-col gap-2.5 w-full mt-[22px]">
           {primary && (
@@ -83,7 +86,7 @@ export function StateView({ Icon, tone = "neutral", title, desc, primary, onPrim
           )}
           {secondary && (
             <button onClick={onSecondary}
-              className="h-12 rounded-[14px] border border-line2 bg-card text-ink text-[14.5px] font-bold whitespace-nowrap">
+              className="h-12 rounded-[14px] border border-line2 dark:border-dark-line2 bg-card dark:bg-dark-card text-ink dark:text-dark-ink text-[14.5px] font-bold whitespace-nowrap">
               {secondary}
             </button>
           )}
