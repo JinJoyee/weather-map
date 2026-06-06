@@ -135,7 +135,7 @@ tests/test_auth.py::test_login_wrong_password PASSED
 # 저장소 루트(weather-map/)에서 실행
 python -m coverage run --source=app -m pytest tests/
 python -m coverage report -m
-# → TOTAL 100%
+# → TOTAL 98%
 ```
 
 #### 프론트엔드 테스트
