@@ -110,23 +110,15 @@ npm run dev
 
 ### Unit Test 실행
 
-테스트는 **저장소 루트**에서 실행합니다. 클론 직후 아래 순서로 실행합니다.
+#### 백엔드 테스트
+
+테스트 파일: `tests/` (저장소 루트 기준)
 
 ```bash
 # 저장소 루트(weather-map/)에서 실행
-cd weather-map
-
-# 가상환경 생성 및 패키지 설치 (최초 1회)
-cd backend
-python -m venv venv
-source venv/bin/activate      # Linux / Mac
-venv\Scripts\activate         # Windows
-pip install -r requirements.txt
-cd ..
-
-# 테스트 실행 (루트에서)
 source backend/venv/bin/activate      # Linux / Mac
 backend\venv\Scripts\activate         # Windows
+
 python -m pytest tests/ -v
 ```
 
@@ -135,10 +127,41 @@ python -m pytest tests/ -v
 tests/test_auth.py::test_login_success PASSED
 tests/test_auth.py::test_login_wrong_password PASSED
 ...
-tests/test_weather.py::test_get_weather_with_invalid_temperature PASSED
-
 106 passed, 3 warnings
 ```
+
+커버리지 측정:
+```bash
+# 저장소 루트(weather-map/)에서 실행
+python -m coverage run --source=app -m pytest tests/
+python -m coverage report -m
+# → TOTAL 100%
+```
+
+#### 프론트엔드 테스트
+
+테스트 파일: `frontend_test/` (저장소 루트 기준)  
+테스트 러너: Vitest + @testing-library/react
+
+```bash
+# ⚠️ 반드시 frontend/ 안에서 실행
+cd frontend
+
+# 테스트 실행
+npx vitest run
+
+# 커버리지 측정
+npx vitest run --coverage
+```
+
+예상 출력:
+```
+Tests  220 passed (220)
+
+Coverage:  Stmts 95% | Branch 86.62% | Funcs 95.2% | Lines 97.49%
+```
+
+> 루트나 `frontend_test/`에서 실행하면 `vite.config.js`를 찾지 못해 동작하지 않습니다.
 
 ---
 
